@@ -64,8 +64,6 @@ public:
     attribute_data<int> useful;
     attribute_data<double> percentage;
     attribute_data<double> converted_percentage;
-    //cal_damage
-    double damage;
 
     Single_Attack(Combination *self,
                   Combination *teammate1,
@@ -81,7 +79,7 @@ public:
 
     void get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_valid, bool &main4_valid, bool &main5_valid);
 
-    void cal_damage(const attribute_data<double> &entry_value, double min_recharge);
+    double cal_damage(const attribute_data<double> &entry_value, double min_recharge);
 
     void get_react_value(double mastery, double &extra_rate, double &grow_rate, double &extra_damage);
 };
@@ -95,7 +93,6 @@ public:
     double min_recharge;
     //cal_optimal_entry_num
     attribute_data<int> entry_num;
-    double *damage;
     double total_damage;
 
     explicit Deployment(const vector<Single_Attack *> &rotation_);

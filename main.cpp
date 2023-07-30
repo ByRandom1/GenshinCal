@@ -333,6 +333,8 @@ void cal_optimal_combination(Config_File *config)
             cout << c_index->name << " " << w_index->name << " " << " time=" << time.count() << "s" << ((time.count() > 30) ? "!!!" : "") << endl;
         }
 
+        chrono::duration<double> total_time = chrono::system_clock::now() - total_start;
+
         if (!out.empty())
         {
             stable_sort(out.begin(), out.end());
@@ -363,7 +365,6 @@ void cal_optimal_combination(Config_File *config)
         }
         out.clear();
 
-        chrono::duration<double> total_time = chrono::system_clock::now() - total_start;
         cout << "total_time:" << total_time.count() << "s" << endl;
     }
 

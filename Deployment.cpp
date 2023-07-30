@@ -61,7 +61,7 @@ Single_Attack::Single_Attack(Combination *self,
     react_type = std::move(react_type_);
     attack_time = attack_time_;
     base_life = base_atk = base_def = 0;
-    base_skillrate = damage = 0;
+    base_skillrate = 0;
 }
 
 bool judge_useful(const attribute_data<int> &useful, attribute_data<double> value)
@@ -133,17 +133,13 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
                  + team[3]->c_point->get_team(this) + team[3]->w_point->get_team(this) + team[3]->suit1->get_team(this);
 }
 
-void Single_Attack::cal_damage(const attribute_data<double> &entry_value, double min_recharge)
+double Single_Attack::cal_damage(const attribute_data<double> &entry_value, double min_recharge)
 {
     attribute_data<double> panel = percentage + entry_value + attribute_data("暴击率", 0.08) + attribute_data("暴击伤害", 0.15);
     //get converted
     panel = panel + converted_percentage + team[0]->c_point->get_convert(this, panel) + team[0]->w_point->get_convert(this, panel) + team[0]->suit1->get_convert(this, panel);//artifact only 4 piece
     //check_recharge
-    if (team[0]->require_recharge && panel.data["元素充能效率"] < min_recharge)
-    {
-        damage = -1;
-        return;
-    }
+    if (team[0]->require_recharge && panel.data["元素充能效率"] < min_recharge) return -1;
     //get extra rate
     double extra_rate = team[0]->c_point->get_extra_rate(this, panel) + team[0]->w_point->get_extra_rate(this, panel) + team[0]->suit1->get_extra_rate(this, panel);//artifact only 4 piece
     //get react
@@ -164,7 +160,7 @@ void Single_Attack::cal_damage(const attribute_data<double> &entry_value, double
     if (panel.data["暴击率"] > 1.0) panel.data["暴击率"] = 1.0;
     if (panel.data["暴击率"] < 0.0) panel.data["暴击率"] = 0.0;
 
-    damage = ((double) base_atk * panel.data["攻击力"] * base_skillrate + extra_rate) * panel.data["伤害加成"] * (1.0 + panel.data["暴击率"] * panel.data["暴击伤害"]) * grow_rate * resistence_ratio * defence_ratio + extra_damage;
+    return ((double) base_atk * panel.data["攻击力"] * base_skillrate + extra_rate) * panel.data["伤害加成"] * (1.0 + panel.data["暴击率"] * panel.data["暴击伤害"]) * grow_rate * resistence_ratio * defence_ratio + extra_damage;
 }
 
 void Single_Attack::get_react_value(double mastery, double &extra_rate, double &grow_rate, double &extra_damage)
@@ -266,7 +262,6 @@ Deployment::Deployment(const vector<Single_Attack *> &rotation_)
 {
     rotation = rotation_;
     min_recharge = 0;
-    damage = new double[rotation_.size()];
     total_damage = 0;
 }
 
@@ -274,7 +269,6 @@ Deployment::~Deployment()
 {
     delete rotation[0]->team[0];
     for (auto &i: rotation) delete i;
-    delete damage;
 }
 
 bool Deployment::operator<(const Deployment &other) const
@@ -429,9 +423,9 @@ void Deployment::cal_optimal_entry_num()
                                                             //cal
                                                             for (auto &i: rotation)
                                                             {
-                                                                i->cal_damage(temp_entry_value, min_recharge);
-                                                                if (i->damage == -1) goto NEXT_ROUND;
-                                                                else temp_total_damage += i->damage;
+                                                                double damage = i->cal_damage(temp_entry_value, min_recharge);
+                                                                if (damage == -1) goto NEXT_ROUND;
+                                                                else temp_total_damage += damage;
                                                             }
 
                                                             //update
@@ -445,7 +439,6 @@ void Deployment::cal_optimal_entry_num()
                                                                                            critrateup + critratebase,
                                                                                            critdamup + critdambase,
                                                                                            0, 0, 0, 0, 0, 0);
-                                                                for (int i = 0; i < rotation.size(); ++i) damage[i] = rotation[i]->damage;
                                                                 total_damage = temp_total_damage;
                                                             }
                                                             goto NEXT_ROUND;//第一次得到的critdam一定是最大的数值
