@@ -16,6 +16,8 @@ extern double max_attribute_num_per_pos;
 extern int max_entry_num;
 extern int artifact_2_2_max_entry_bonus;
 
+class Single_Attack;
+
 struct Combination
 {
     Character *c_point;
@@ -26,7 +28,7 @@ struct Combination
     string a_main4;
     string a_main5;
 
-    int E_energy_time;
+    vector<Single_Attack *> ori_attack_list;
     bool require_recharge;
 
     Combination(Character *c_point_,
@@ -36,8 +38,9 @@ struct Combination
                 string a_main3_,
                 string a_main4_,
                 string a_main5_,
-                int E_energy_time_,
-                bool require_recharge_);
+                vector<Single_Attack *> ori_attack_list_);
+
+    void add_attack_list(const vector<Single_Attack *> &ori_attack_list_);
 };
 
 class Single_Attack
@@ -46,14 +49,13 @@ public:
     //team info (global)
     Combination *team[4];
     string ele_attach_type;
-    string ele_allow_spread;
     //attack info (independent)
     string attack_way;
+    string release_or_hit;
     int rate_pos;
     bool background;
     string react_type;
-    manual_args args;
-    int attack_time;
+    double attack_time;
     //get_data
     int base_life;
     int base_atk;
@@ -70,19 +72,18 @@ public:
                   Combination *teammate2,
                   Combination *teammate3,
                   string ele_attach_type_,
-                  string ele_allow_spread_,
                   string attack_way_,
+                  string release_or_hit_,
                   int rate_pos_,
                   bool background_,
                   string react_type_,
-                  int attack_time_,
-                  manual_args args_);
+                  double attack_time_);
 
     void get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_valid, bool &main4_valid, bool &main5_valid);
 
-    void cal_damage(attribute_data<double> entry_value, double min_recharge);
+    void cal_damage(const attribute_data<double> &entry_value, double min_recharge);
 
-    void get_react_value(attribute_data<double> &panel, double &extra_rate, double &grow_rate, double &extra_damage);
+    void get_react_value(double mastery, double &extra_rate, double &grow_rate, double &extra_damage);
 };
 
 class Deployment
@@ -97,9 +98,11 @@ public:
     double *damage;
     double total_damage;
 
-    Deployment(vector<Single_Attack *> rotation_);
+    explicit Deployment(const vector<Single_Attack *> &rotation_);
 
     ~Deployment();
+
+    inline bool operator<(const Deployment &other) const;
 
     int get_all_data();
 

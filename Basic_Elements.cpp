@@ -4,7 +4,7 @@
 
 #include "Basic_Elements.h"
 
-bool operator<=(string inf, string target)
+bool operator<=(const string &inf, const string &target)
 {
     return (target == "ALL") || (target.find(inf) != string::npos);
 }

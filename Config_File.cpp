@@ -4,7 +4,9 @@
 
 #include "Config_File.h"
 
-vector<string> split(string info, char with)
+#include <utility>
+
+vector<string> split(const string &info, char with)
 {
     vector<string> result;
     int pos = 0;
@@ -17,7 +19,7 @@ vector<string> split(string info, char with)
     return result;
 }
 
-map<string, string> get_params(vector<string> info, char with)
+map<string, string> get_params(const vector<string> &info, char with)
 {
     map<string, string> result;
     for (auto &i: info)
@@ -28,12 +30,12 @@ map<string, string> get_params(vector<string> info, char with)
 
 Config_File::Config_File(string team_name_, vector<string> file)
 {
-    team_name = team_name_;
+    team_name = std::move(team_name_);
 
-    //parse config
-    pair<string, Character *> ch[4];
+    string ch[4];
     string ele_attach_type;
-    string ele_allow_spread;
+    Combination *team[4];
+    vector<Single_Attack *> attack_config[4];
 
     int index = 0;
     while (index < file.size())
@@ -43,10 +45,10 @@ Config_File::Config_File(string team_name_, vector<string> file)
         {
             if (info[2] == "character")
             {
-                ch[0] = make_pair(info[3], find_character_by_name(info[3]));
-                ch[1] = make_pair(info[4], find_character_by_name(info[4]));
-                ch[2] = make_pair(info[5], find_character_by_name(info[5]));
-                ch[3] = make_pair(info[6], find_character_by_name(info[6]));
+                ch[0] = info[3];
+                ch[1] = info[4];
+                ch[2] = info[5];
+                ch[3] = info[6];
             }
             else if (info[2] == "options") options = info[3];
             else if (info[2] == "target") target = info[3];
@@ -55,69 +57,44 @@ Config_File::Config_File(string team_name_, vector<string> file)
                 while (file[++index] != "ATTACK_LIST END")
                     attack_list.push_back(file[index]);
             }
-            else if (info[2] == "team_config")
-            {
-                map<string, string> params = get_params(info, '=');
-                ele_attach_type = params["ele_attach_type"];
-                ele_allow_spread = params["ele_allow_spread"];
-            }
         }
         else
         {
             int pos = -1;
-            if (info[0] == ch[0].first) pos = 0;
-            if (info[0] == ch[1].first) pos = 1;
-            if (info[0] == ch[2].first) pos = 2;
-            if (info[0] == ch[3].first) pos = 3;
+            if (info[0] == ch[0]) pos = 0;
+            if (info[0] == ch[1]) pos = 1;
+            if (info[0] == ch[2]) pos = 2;
+            if (info[0] == ch[3]) pos = 3;
             if (pos != -1)
             {
                 if (info[2] == "gcsim_combination")
                 {
                     map<string, string> params = get_params(info, '=');
-                    gcsim[pos].emplace_back(new Combination(ch[pos].second, find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]), find_artifact_by_name(params["suit2"]),
-                                                            params["main3"], params["main4"], params["main5"], 0, false));
-                }
-                else if (info[2] == "cal_optimal_entry_num_combination")
-                {
-                    map<string, string> params = get_params(info, '=');
-                    cal_entry[pos].emplace_back(new Combination(ch[pos].second, find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]), find_artifact_by_name(params["suit2"]),
-                                                                params["main3"], params["main4"], params["main5"], 0, false));
-                }
-                else if (info[2] == "cal_optiaml_artifact_combination")
-                {
-                    map<string, string> params = get_params(info, '=');
-                    cal_artifact[pos].emplace_back(new Combination(ch[pos].second, find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]), find_artifact_by_name(params["suit2"]),
-                                                                   params["main3"], params["main4"], params["main5"], 0, false));
+                    gcsim[pos].emplace_back(new Combination(find_character_by_name(ch[pos]), find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]),
+                                                            find_artifact_by_name(params["suit2"]), params["main3"], params["main4"], params["main5"], vector<Single_Attack *>{}));
                 }
                 else if (info[2] == "team_combination")
                 {
                     map<string, string> params = get_params(info, '=');
-                    team[pos] = new Combination(ch[pos].second, find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]), find_artifact_by_name(params["suit2"]),
-                                                "", "", "", stoi(params["E_energy_time"]), (bool) stoi(params["require_recharge"]));
+                    team[pos] = new Combination(find_character_by_name(ch[pos]), find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]),
+                                                find_artifact_by_name(params["suit2"]), "", "", "", vector<Single_Attack *>{});
+                    ele_attach_type = params["ele_attach_type"];
                 }
                 else if (info[2] == "attack_config")
                 {
                     map<string, string> params = get_params(info, '=');
-                    attack_config[pos].emplace_back(new Single_Attack(nullptr, nullptr, nullptr, nullptr, ele_attach_type, ele_allow_spread, params["attack_way"],
-                                                                      stoi(params["rate_pos"]), (bool) stoi(params["background"]), params["react_type"], stoi(params["attack_time"]),
-                                                                      manual_args(stoi(params["cangbai_level"]),
-                                                                                  (bool) stoi(params["qianyan_enable"]),
-                                                                                  stoi(params["monv_level"]),
-                                                                                  (bool) stoi(params["chensha_enable"]),
-                                                                                  (bool) stoi(params["shenlin_enable"]),
-                                                                                  stoi(params["shuixian_level"]),
-                                                                                  stoi(params["zhuying_level"]),
-                                                                                  "ch[pos].second->get_weapon_type()",
-                                                                                  stoi(params["wuqie_shenle_feilei_humo"]),
-                                                                                  stoi(params["shengxian_biluo_dongji_chisha"]),
-                                                                                  stoi(params["langya_sifeng_pomo_shizuo"]))));
+                    attack_config[pos].emplace_back(new Single_Attack(nullptr, nullptr, nullptr, nullptr, ele_attach_type, params["attack_way"], params["release_or_hit"],
+                                                                      stoi(params["rate_pos"]), (bool) stoi(params["background"]), params["react_type"], stod(params["attack_time"])));
                 }
             }
         }
         index++;
     }
 
+    //均为指针，赋值顺序无所谓
     for (int i = 0; i < 4; ++i)
+    {
+        team[i]->add_attack_list(attack_config[i]);
         for (int j = 0; j < attack_config[i].size(); ++j)
         {
             attack_config[i][j]->team[0] = team[i % 4];
@@ -125,30 +102,20 @@ Config_File::Config_File(string team_name_, vector<string> file)
             attack_config[i][j]->team[2] = team[(i + 2) % 4];
             attack_config[i][j]->team[3] = team[(i + 3) % 4];
         }
+        ori[i] = new Deployment(attack_config[i]);
+    }
 }
 
 Config_File::~Config_File()
 {
-    delete team[0];
-    delete team[1];
-    delete team[2];
-    delete team[3];
     for (auto &i: gcsim[0]) delete i;
     for (auto &i: gcsim[1]) delete i;
     for (auto &i: gcsim[2]) delete i;
     for (auto &i: gcsim[3]) delete i;
-    for (auto &i: cal_entry[0]) delete i;
-    for (auto &i: cal_entry[1]) delete i;
-    for (auto &i: cal_entry[2]) delete i;
-    for (auto &i: cal_entry[3]) delete i;
-    for (auto &i: cal_artifact[0]) delete i;
-    for (auto &i: cal_artifact[1]) delete i;
-    for (auto &i: cal_artifact[2]) delete i;
-    for (auto &i: cal_artifact[3]) delete i;
-    for (auto &i: attack_config[0]) delete i;
-    for (auto &i: attack_config[1]) delete i;
-    for (auto &i: attack_config[2]) delete i;
-    for (auto &i: attack_config[3]) delete i;
+    delete ori[0];
+    delete ori[1];
+    delete ori[2];
+    delete ori[3];
 }
 
 string Config_File::generate_sample_config()
@@ -164,30 +131,20 @@ string Config_File::generate_sample_config()
     result += "rotation_end\n";
     result += "ATTACK_LIST END\n";
     result += "\n";
-    result += "all add team_config ele_attach_type= ele_allow_spread=\n";
     result += "A add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "A add cal_optimal_entry_num_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "A add cal_optiaml_artifact_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "A add team_combination weapon= suit1= suit2= E_energy_time= require_recharge=\n";
-    result += "A add attack_config attack_way= rate_pos= background= react_type= attack_time= cangbai_level= qianyan_enable= monv_level= chensha_enable= shenlin_enable= shuixian_level= zhuying_level= wuqie_shenle_feilei_humo= shengxian_biluo_dongji_chisha= langya_sifeng_pomo_shizuo=\n";
+    result += "A add team_combination weapon= suit1= suit2= ele_attach_type=\n";
+    result += "A add attack_config attack_way= release_or_hit= rate_pos= background= react_type= attack_time=\n";
     result += "\n";
     result += "B add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "B add cal_optimal_entry_num_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "B add cal_optiaml_artifact_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "B add team_combination weapon= suit1= suit2= E_energy_time= require_recharge=\n";
-    result += "B add attack_config attack_way= rate_pos= background= react_type= attack_time= cangbai_level= qianyan_enable= monv_level= chensha_enable= shenlin_enable= shuixian_level= zhuying_level= wuqie_shenle_feilei_humo= shengxian_biluo_dongji_chisha= langya_sifeng_pomo_shizuo=\n";
+    result += "B add team_combination weapon= suit1= suit2= ele_attach_type=\n";
+    result += "B add attack_config attack_way= release_or_hit= rate_pos= background= react_type= attack_time=\n";
     result += "\n";
     result += "C add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "C add cal_optimal_entry_num_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "C add cal_optiaml_artifact_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "C add team_combination weapon= suit1= suit2= E_energy_time= require_recharge=\n";
-    result += "C add attack_config attack_way= rate_pos= background= react_type= attack_time= cangbai_level= qianyan_enable= monv_level= chensha_enable= shenlin_enable= shuixian_level= zhuying_level= wuqie_shenle_feilei_humo= shengxian_biluo_dongji_chisha= langya_sifeng_pomo_shizuo=\n";
+    result += "C add team_combination weapon= suit1= suit2= ele_attach_type=\n";
+    result += "C add attack_config attack_way= release_or_hit= rate_pos= background= react_type= attack_time=\n";
     result += "\n";
     result += "D add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "D add cal_optimal_entry_num_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "D add cal_optiaml_artifact_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "D add team_combination weapon= suit1= suit2= E_energy_time= require_recharge=\n";
-    result += "D add attack_config attack_way= rate_pos= background= react_type= attack_time= cangbai_level= qianyan_enable= monv_level= chensha_enable= shenlin_enable= shuixian_level= zhuying_level= wuqie_shenle_feilei_humo= shengxian_biluo_dongji_chisha= langya_sifeng_pomo_shizuo=\n";
-
+    result += "D add team_combination weapon= suit1= suit2= ele_attach_type=\n";
+    result += "D add attack_config attack_way= release_or_hit= rate_pos= background= react_type= attack_time=\n";
     return result;
 }

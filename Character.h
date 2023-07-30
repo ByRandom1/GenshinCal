@@ -53,44 +53,42 @@ public:
               int life_,
               int atk_,
               int def_,
-              attribute_data<double> break_value_,
+              const attribute_data<double> &break_value_,
               int A_level_,
-              attribute_data<int> A_useful_attributes_,
+              const attribute_data<int> &A_useful_attributes_,
               string normal_A_ele_type_,
-              vector<double> normal_A_10, vector<double> normal_A_9,
+              const vector<double> &normal_A_10, const vector<double> &normal_A_9,
               string heavy_A_ele_type_,
-              vector<double> heavy_A_10, vector<double> heavy_A_9,
+              const vector<double> &heavy_A_10, const vector<double> &heavy_A_9,
               string down_A_ele_type_,
-              vector<double> down_A_10, vector<double> down_A_9,
+              const vector<double> &down_A_10, const vector<double> &down_A_9,
               int E_level_,
               double E_energy_,
               bool E_lockface_,
-              attribute_data<int> E_useful_attributes_,
-              vector<double> E_13, vector<double> E_12, vector<double> E_10, vector<double> E_9,
+              const attribute_data<int> &E_useful_attributes_,
+              const vector<double> &E_13, const vector<double> &E_12, const vector<double> &E_10, const vector<double> &E_9,
               int Q_level_,
               int Q_energy_,
               bool Q_lockface_,
-              attribute_data<int> Q_useful_attributes_,
-              vector<double> Q_13, vector<double> Q_12, vector<double> Q_10, vector<double> Q_9,
+              const attribute_data<int> &Q_useful_attributes_,
+              const vector<double> &Q_13, const vector<double> &Q_12, const vector<double> &Q_10, const vector<double> &Q_9,
               int constellation_);
 
-    int get_life();
+    int get_life() const;
 
-    int get_atk();
+    int get_atk() const;
 
-    int get_def();
+    int get_def() const;
 
     attribute_data<double> get_break();
 
-    string get_ele_type(string attack_way);
+    string get_ele_type(const string &attack_way);
 
-    double get_rate(string attack_way, int pos);
+    double get_rate(const string &attack_way, int pos);
 
-    attribute_data<int> get_useful_attribute(string attack_way);
+    attribute_data<int> get_useful_attribute(const string &attack_way);
 
     virtual attribute_data<double> get_extra(const Single_Attack *attack_config) = 0;
-
-    virtual attribute_data<int> modify_allowed_attribute(const Single_Attack *attack_config) = 0;
 
     virtual attribute_data<double> get_team(const Single_Attack *attack_config) = 0;
 
@@ -106,12 +104,14 @@ public:
 
     friend void generate_gcsim_script(Config_File *config);
 
-    friend Character *find_character_by_name(string name);
+    friend void cal_optimal_combination(Config_File *config);
+
+    friend Character *find_character_by_name(const string &name);
 };
 
-vector<Character*> Character_list;
+extern vector<Character *> Character_list;
 
-Character *find_character_by_name(string name);
+Character *find_character_by_name(const string &name);
 
 void init_Character_list();
 

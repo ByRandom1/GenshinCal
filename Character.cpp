@@ -4,6 +4,8 @@
 
 #include "Character.h"
 
+#include <utility>
+
 Character::Character(string name_,
                      string english_name_,
                      string ele_type_,
@@ -11,44 +13,44 @@ Character::Character(string name_,
                      int life_,
                      int atk_,
                      int def_,
-                     attribute_data<double> break_value_,
+                     const attribute_data<double> &break_value_,
                      int A_level_,
-                     attribute_data<int> A_useful_attributes_,
+                     const attribute_data<int> &A_useful_attributes_,
                      string normal_A_ele_type_,
-                     vector<double> normal_A_10, vector<double> normal_A_9,
+                     const vector<double> &normal_A_10, const vector<double> &normal_A_9,
                      string heavy_A_ele_type_,
-                     vector<double> heavy_A_10, vector<double> heavy_A_9,
+                     const vector<double> &heavy_A_10, const vector<double> &heavy_A_9,
                      string down_A_ele_type_,
-                     vector<double> down_A_10, vector<double> down_A_9,
+                     const vector<double> &down_A_10, const vector<double> &down_A_9,
                      int E_level_,
                      double E_energy_,
                      bool E_lockface_,
-                     attribute_data<int> E_useful_attributes_,
-                     vector<double> E_13, vector<double> E_12, vector<double> E_10, vector<double> E_9,
+                     const attribute_data<int> &E_useful_attributes_,
+                     const vector<double> &E_13, const vector<double> &E_12, const vector<double> &E_10, const vector<double> &E_9,
                      int Q_level_,
                      int Q_energy_,
                      bool Q_lockface_,
-                     attribute_data<int> Q_useful_attributes_,
-                     vector<double> Q_13, vector<double> Q_12, vector<double> Q_10, vector<double> Q_9,
+                     const attribute_data<int> &Q_useful_attributes_,
+                     const vector<double> &Q_13, const vector<double> &Q_12, const vector<double> &Q_10, const vector<double> &Q_9,
                      int constellation_)
 {
-    name = name_;
-    english_name = english_name_;
-    ele_type = ele_type_;
-    weapon_type = weapon_type_;
+    name = std::move(name_);
+    english_name = std::move(english_name_);
+    ele_type = std::move(ele_type_);
+    weapon_type = std::move(weapon_type_);
     life = life_;
     atk = atk_;
     def = def_;
     break_value = break_value_;
     A_level = A_level_;
     A_useful_attributes = A_useful_attributes_;
-    normal_A_ele_type = normal_A_ele_type_;
+    normal_A_ele_type = std::move(normal_A_ele_type_);
     normal_A.push_back(normal_A_10);
     normal_A.push_back(normal_A_9);
-    heavy_A_ele_type = heavy_A_ele_type_;
+    heavy_A_ele_type = std::move(heavy_A_ele_type_);
     heavy_A.push_back(heavy_A_10);
     heavy_A.push_back(heavy_A_9);
-    down_A_ele_type = down_A_ele_type_;
+    down_A_ele_type = std::move(down_A_ele_type_);
     down_A.push_back(down_A_10);
     down_A.push_back(down_A_9);
     E_level = E_level_;
@@ -70,17 +72,17 @@ Character::Character(string name_,
     constellation = constellation_;
 }
 
-int Character::get_life()
+int Character::get_life() const
 {
     return life;
 }
 
-int Character::get_atk()
+int Character::get_atk() const
 {
     return atk;
 }
 
-int Character::get_def()
+int Character::get_def() const
 {
     return def;
 }
@@ -90,7 +92,7 @@ attribute_data<double> Character::get_break()
     return break_value;
 }
 
-string Character::get_ele_type(string attack_way)
+string Character::get_ele_type(const string &attack_way)
 {
     if (attack_way == "平A") return normal_A_ele_type;
     else if (attack_way == "重A") return heavy_A_ele_type;
@@ -98,7 +100,7 @@ string Character::get_ele_type(string attack_way)
     else return ele_type;
 }
 
-attribute_data<int> Character::get_useful_attribute(string attack_way)
+attribute_data<int> Character::get_useful_attribute(const string &attack_way)
 {
     if (attack_way == "平A" || attack_way == "重A" || attack_way == "下落A") return A_useful_attributes;
     else if (attack_way == "E") return E_useful_attributes;
@@ -106,7 +108,7 @@ attribute_data<int> Character::get_useful_attribute(string attack_way)
     else return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 }
 
-double Character::get_rate(string attack_way, int pos)
+double Character::get_rate(const string &attack_way, int pos)
 {
     if (attack_way == "平A")
     {
@@ -140,7 +142,7 @@ double Character::get_rate(string attack_way, int pos)
     return 0;
 }
 
-Character *find_character_by_name(string name)
+Character *find_character_by_name(const string &name)
 {
     for (auto &c: Character_list)
         if (c->name == name)

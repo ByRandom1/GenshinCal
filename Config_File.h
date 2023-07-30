@@ -15,15 +15,13 @@ class Config_File
 {
 public:
     string team_name;
+
+    vector<Combination *> gcsim[4];
     string options;
     string target;
     vector<string> attack_list;
 
-    Combination* team[4];
-    vector<Combination *> gcsim[4];
-    vector<Combination *> cal_entry[4];
-    vector<Combination *> cal_artifact[4];
-    vector<Single_Attack *> attack_config[4];
+    Deployment *ori[4];
 
     Config_File(string team_name_, vector<string> file);
 

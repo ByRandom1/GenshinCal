@@ -27,18 +27,16 @@ public:
            string english_name_,
            string weapon_type_,
            int atk_,
-           attribute_data<double> break_value_,
+           const attribute_data<double> &break_value_,
            int level_);
 
-    int get_atk();
+    int get_atk() const;
 
-    attribute_data<double> get_break(string ele_type);
+    attribute_data<double> get_break(const string &ele_type);
 
     virtual attribute_data<int> get_useful_attribute(const Single_Attack *attack_config) = 0;
 
     virtual attribute_data<double> get_extra(const Single_Attack *attack_config) = 0;
-
-    virtual attribute_data<int> modify_allowed_attribute(const Single_Attack *attack_config) = 0;
 
     virtual attribute_data<double> get_team(const Single_Attack *attack_config) = 0;
 
@@ -54,12 +52,14 @@ public:
 
     friend void generate_gcsim_script(Config_File *config);
 
-    friend Weapon *find_weapon_by_name(string name);
+    friend void cal_optimal_combination(Config_File *config);
+
+    friend Weapon *find_weapon_by_name(const string &name);
 };
 
-vector<Weapon*> Weapon_list;
+extern vector<Weapon *> Weapon_list;
 
-Weapon *find_weapon_by_name(string name);
+Weapon *find_weapon_by_name(const string &name);
 
 void init_Weapon_list();
 

@@ -4,6 +4,8 @@
 
 #include "Deployment.h"
 
+#include <utility>
+
 Combination::Combination(Character *c_point_,
                          Weapon *w_point_,
                          Artifact *suit1_,
@@ -11,18 +13,28 @@ Combination::Combination(Character *c_point_,
                          string a_main3_,
                          string a_main4_,
                          string a_main5_,
-                         int E_energy_time_,
-                         bool require_recharge_)
+                         vector<Single_Attack *> ori_attack_list_)
 {
     c_point = c_point_;
     w_point = w_point_;
     suit1 = suit1_;
     suit2 = suit2_;
-    a_main3 = a_main3_;
-    a_main4 = a_main4_;
-    a_main5 = a_main5_;
-    E_energy_time = E_energy_time_;
-    require_recharge = require_recharge_;
+    a_main3 = std::move(a_main3_);
+    a_main4 = std::move(a_main4_);
+    a_main5 = std::move(a_main5_);
+    ori_attack_list = std::move(ori_attack_list_);
+    require_recharge = false;
+}
+
+void Combination::add_attack_list(const vector<Single_Attack *> &ori_attack_list_)
+{
+    ori_attack_list = ori_attack_list_;
+    for (auto &i: ori_attack_list_)
+        if (i->attack_way == "Q" && "release" <= i->release_or_hit)
+        {
+            require_recharge = true;
+            break;
+        }
 }
 
 Single_Attack::Single_Attack(Combination *self,
@@ -30,29 +42,29 @@ Single_Attack::Single_Attack(Combination *self,
                              Combination *teammate2,
                              Combination *teammate3,
                              string ele_attach_type_,
-                             string ele_allow_spread_,
                              string attack_way_,
+                             string release_or_hit_,
                              int rate_pos_,
                              bool background_,
                              string react_type_,
-                             int attack_time_,
-                             manual_args args_)
+                             double attack_time_)
 {
     team[0] = self;
     team[1] = teammate1;
     team[2] = teammate2;
     team[3] = teammate3;
-    ele_attach_type = ele_attach_type_;
-    ele_allow_spread = ele_allow_spread_;
-    attack_way = attack_way_;
+    ele_attach_type = std::move(ele_attach_type_);
+    attack_way = std::move(attack_way_);
+    release_or_hit = std::move(release_or_hit_);
     rate_pos = rate_pos_;
     background = background_;
-    react_type = react_type_;
-    args = args_;
+    react_type = std::move(react_type_);
     attack_time = attack_time_;
+    base_life = base_atk = base_def = 0;
+    base_skillrate = damage = 0;
 }
 
-bool judge_useful(attribute_data<int> useful, attribute_data<double> value)
+bool judge_useful(const attribute_data<int> &useful, attribute_data<double> value)
 {
     double total = 0;
     for (auto &iter: useful.data)
@@ -86,9 +98,6 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
         suit2_valid = judge_useful(useful, team[0]->suit2->get_extra(this));
         percentage = percentage + team[0]->suit1->get_extra(this) + team[0]->suit2->get_extra(this);
     }
-
-    //modify useful
-    useful = useful + team[0]->c_point->modify_allowed_attribute(this) + team[0]->w_point->modify_allowed_attribute(this) + team[0]->suit1->modify_allowed_attribute(this);//artifact only 4 piece
 
     //get entry
     percentage.data["生命值"] += 4780.0 / base_life;
@@ -124,12 +133,9 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
                  + team[3]->c_point->get_team(this) + team[3]->w_point->get_team(this) + team[3]->suit1->get_team(this);
 }
 
-void Single_Attack::cal_damage(attribute_data<double> entry_value, double min_recharge)
+void Single_Attack::cal_damage(const attribute_data<double> &entry_value, double min_recharge)
 {
-    attribute_data<double> panel = percentage + entry_value;
-    //深渊
-    panel.data["暴击率"] += 0.08;
-    panel.data["暴击伤害"] += 0.15;
+    attribute_data<double> panel = percentage + entry_value + attribute_data("暴击率", 0.08) + attribute_data("暴击伤害", 0.15);
     //get converted
     panel = panel + converted_percentage + team[0]->c_point->get_convert(this, panel) + team[0]->w_point->get_convert(this, panel) + team[0]->suit1->get_convert(this, panel);//artifact only 4 piece
     //check_recharge
@@ -143,9 +149,10 @@ void Single_Attack::cal_damage(attribute_data<double> entry_value, double min_re
     //get react
     double grow_rate = 1.0;
     double extra_damage = 0.0;
-    get_react_value(panel, extra_rate, grow_rate, extra_damage);
+    get_react_value(panel.data["元素精通"], extra_rate, grow_rate, extra_damage);
     //get resist ratio
     double resistence_ratio;
+    if ("超导" <= react_type && team[0]->c_point->get_ele_type(attack_way) == "物理") panel.data["抗性削弱"] += 0.4;
     if (0.1 - panel.data["抗性削弱"] >= 0.75) resistence_ratio = 1 / (4 * (0.1 - panel.data["抗性削弱"]) + 1);
     else if (0.1 - panel.data["抗性削弱"] < 0) resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]) / 2;
     else resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]);
@@ -157,10 +164,10 @@ void Single_Attack::cal_damage(attribute_data<double> entry_value, double min_re
     if (panel.data["暴击率"] > 1.0) panel.data["暴击率"] = 1.0;
     if (panel.data["暴击率"] < 0.0) panel.data["暴击率"] = 0.0;
 
-    damage = attack_time * (((double) base_atk * panel.data["攻击力"] * base_skillrate + extra_rate) * panel.data["伤害加成"] * (1.0 + panel.data["暴击率"] * panel.data["暴击伤害"]) * grow_rate * resistence_ratio * defence_ratio + extra_damage);
+    damage = ((double) base_atk * panel.data["攻击力"] * base_skillrate + extra_rate) * panel.data["伤害加成"] * (1.0 + panel.data["暴击率"] * panel.data["暴击伤害"]) * grow_rate * resistence_ratio * defence_ratio + extra_damage;
 }
 
-void Single_Attack::get_react_value(attribute_data<double> &panel, double &extra_rate, double &grow_rate, double &extra_damage)
+void Single_Attack::get_react_value(double mastery, double &extra_rate, double &grow_rate, double &extra_damage)
 {
     //扩散（风+水火雷冰），结晶（岩+水火雷冰），绽放（草水+火雷），激化（草雷），燃烧（草火），蒸发（水火），融化（火冰），冻结（水冰），感电（雷水），超载（雷火），超导（雷冰）
     //默认剧变抗性固定为0.1
@@ -168,7 +175,7 @@ void Single_Attack::get_react_value(attribute_data<double> &panel, double &extra
     if ("扩散" <= react_type)
     {
         double extra_damplus = team[0]->c_point->get_react_bonus(this, "扩散") + team[0]->w_point->get_react_bonus(this, "扩散") + team[0]->suit1->get_react_bonus(this, "扩散");
-        extra_damage += 1.2 * 723.4 * (1.0 + (16.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 2000.0) + extra_damplus);
+        extra_damage += 1.2 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);
         //1.2 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
         //元素伤，吃各元素抗
     }
@@ -182,21 +189,21 @@ void Single_Attack::get_react_value(attribute_data<double> &panel, double &extra
 //        if ("烈绽放" <= react_type)
 //        {
 //            double extra_damplus = team[0]->c_point->get_react_bonus(this, "烈绽放") + team[0]->w_point->get_react_bonus(this, "烈绽放") + team[0]->suit1->get_react_bonus(this, "烈绽放");
-//            extra_damage += 6.0 * 723.4 * (1.0 + (16.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
+//            extra_damage += 6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
 //            //6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
 //            //草伤，吃草抗
 //        }
 //        else if ("超绽放" <= react_type)
 //        {
 //            double extra_damplus = team[0]->c_point->get_react_bonus(this, "超绽放") + team[0]->w_point->get_react_bonus(this, "超绽放") + team[0]->suit1->get_react_bonus(this, "超绽放");
-//            extra_damage += 6.0 * 723.4 * (1.0 + (16.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
+//            extra_damage += 6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
 //            //6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
 //            //草伤，吃草抗
 //        }
 //        else
 //        {
 //            double extra_damplus = team[0]->c_point->get_react_bonus(this, "绽放") + team[0]->w_point->get_react_bonus(this, "绽放") + team[0]->suit1->get_react_bonus(this, "绽放");
-//            extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
+//            extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
 //            //4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
 //            //草伤，吃草抗
 //        }
@@ -204,29 +211,27 @@ void Single_Attack::get_react_value(attribute_data<double> &panel, double &extra
     if ("激化" <= react_type)
     {
         double extra_damplus = team[0]->c_point->get_react_bonus(this, "激化") + team[0]->w_point->get_react_bonus(this, "激化") + team[0]->suit1->get_react_bonus(this, "激化");
-        if (team[0]->c_point->get_ele_type(attack_way) == "草") extra_rate += 1447.0 * 1.25 * (1.0 + (5.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 1200.0) + extra_damplus);
-        else if (team[0]->c_point->get_ele_type(attack_way) == "雷") extra_rate += 1447.0 * 1.15 * (1.0 + (5.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 1200.0) + extra_damplus);
+        if (team[0]->c_point->get_ele_type(attack_way) == "草") extra_rate += 1447.0 * 1.25 * (1.0 + (5.0 * mastery) / (mastery + 1200.0) + extra_damplus);
+        else if (team[0]->c_point->get_ele_type(attack_way) == "雷") extra_rate += 1447.0 * 1.15 * (1.0 + (5.0 * mastery) / (mastery + 1200.0) + extra_damplus);
     }
     if ("燃烧" <= react_type)
     {
         double extra_damplus = team[0]->c_point->get_react_bonus(this, "燃烧") + team[0]->w_point->get_react_bonus(this, "燃烧") + team[0]->suit1->get_react_bonus(this, "燃烧");
-        extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
+        extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
         //0.5 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
         //火伤，吃火抗，8段伤害
     }
     if ("蒸发" <= react_type)
     {
         double extra_damplus = team[0]->c_point->get_react_bonus(this, "蒸发") + team[0]->w_point->get_react_bonus(this, "蒸发") + team[0]->suit1->get_react_bonus(this, "蒸发");
-        grow_rate = 1.0 + (25.0 * panel.data["元素精通"]) / (9.0 * (panel.data["元素精通"] + 1401.0)) + extra_damplus;
-        if (team[0]->c_point->get_ele_type(attack_way) == "火") grow_rate *= 1.5;
-        else if (team[0]->c_point->get_ele_type(attack_way) == "水") grow_rate *= 2.0;
+        if (team[0]->c_point->get_ele_type(attack_way) == "火") grow_rate = 1.5 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
+        else if (team[0]->c_point->get_ele_type(attack_way) == "水") grow_rate = 2.0 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
     }
     if ("融化" <= react_type)
     {
         double extra_damplus = team[0]->c_point->get_react_bonus(this, "融化") + team[0]->w_point->get_react_bonus(this, "融化") + team[0]->suit1->get_react_bonus(this, "融化");
-        grow_rate = 1.0 + (25.0 * panel.data["元素精通"]) / (9.0 * (panel.data["元素精通"] + 1401.0)) + extra_damplus;
-        if (team[0]->c_point->get_ele_type(attack_way) == "火") grow_rate *= 2.0;
-        else if (team[0]->c_point->get_ele_type(attack_way) == "冰") grow_rate *= 1.5;
+        if (team[0]->c_point->get_ele_type(attack_way) == "火") grow_rate = 2.0 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
+        else if (team[0]->c_point->get_ele_type(attack_way) == "冰") grow_rate = 1.5 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
     }
     if ("冻结" <= react_type)
     {
@@ -237,37 +242,44 @@ void Single_Attack::get_react_value(attribute_data<double> &panel, double &extra
     if ("感电" <= react_type)
     {
         double extra_damplus = team[0]->c_point->get_react_bonus(this, "感电") + team[0]->w_point->get_react_bonus(this, "感电") + team[0]->suit1->get_react_bonus(this, "感电");
-        extra_damage += 2.4 * 723.4 * (1.0 + (16.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 2000.0) + extra_damplus);
+        extra_damage += 2.4 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);
         //2.4 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
         //雷伤，吃雷抗
     }
     if ("超载" <= react_type)
     {
         double extra_damplus = team[0]->c_point->get_react_bonus(this, "超载") + team[0]->w_point->get_react_bonus(this, "超载") + team[0]->suit1->get_react_bonus(this, "超载");
-        extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 2000.0) + extra_damplus);
+        extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);
         //4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
         //火伤，吃火抗
     }
     if ("超导" <= react_type)
     {
         double extra_damplus = team[0]->c_point->get_react_bonus(this, "超导") + team[0]->w_point->get_react_bonus(this, "超导") + team[0]->suit1->get_react_bonus(this, "超导");
-        extra_damage += 1.0 * 723.4 * (1.0 + (16.0 * panel.data["元素精通"]) / (panel.data["元素精通"] + 2000.0) + extra_damplus);
+        extra_damage += 1.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);
         //1.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
         //冰伤，吃冰抗
-        if (team[0]->c_point->get_ele_type(attack_way) == "物理") panel.data["抗性削弱"] += 0.4;
     }
 }
 
-Deployment::Deployment(vector<Single_Attack *> rotation_)
+Deployment::Deployment(const vector<Single_Attack *> &rotation_)
 {
     rotation = rotation_;
+    min_recharge = 0;
     damage = new double[rotation_.size()];
+    total_damage = 0;
 }
 
 Deployment::~Deployment()
 {
+    delete rotation[0]->team[0];
     for (auto &i: rotation) delete i;
     delete damage;
+}
+
+bool Deployment::operator<(const Deployment &other) const
+{
+    return this->total_damage < other.total_damage;
 }
 
 int Deployment::get_all_data()
@@ -336,13 +348,13 @@ void Deployment::cal_optimal_entry_num()
     int critrate_pos = 5 - ((rotation[0]->team[0]->a_main5 == "暴击率") ? 1 : 0);
     int critdam_pos = 5 - ((rotation[0]->team[0]->a_main5 == "暴击伤害") ? 1 : 0);
 
-    int life_base = (collected_useful.data["生命值"]) ? life_pos : 0;
-    int atk_base = (collected_useful.data["攻击力"]) ? atk_pos : 0;
-    int def_base = (collected_useful.data["防御力"]) ? def_pos : 0;
-    int mastery_base = (collected_useful.data["元素精通"]) ? mastery_pos : 0;
-    int recharge_base = (collected_useful.data["元素充能效率"]) ? recharge_pos : 0;
-    int critrate_base = (collected_useful.data["暴击率"]) ? critrate_pos : 0;
-    int critdam_base = (collected_useful.data["暴击伤害"]) ? critdam_pos : 0;
+    int life_base = (collected_useful.data["生命值"] > 0) ? life_pos : 0;
+    int atk_base = (collected_useful.data["攻击力"] > 0) ? atk_pos : 0;
+    int def_base = (collected_useful.data["防御力"] > 0) ? def_pos : 0;
+    int mastery_base = (collected_useful.data["元素精通"] > 0) ? mastery_pos : 0;
+    int recharge_base = (collected_useful.data["元素充能效率"] > 0) ? recharge_pos : 0;
+    int critrate_base = (collected_useful.data["暴击率"] > 0) ? critrate_pos : 0;
+    int critdam_base = (collected_useful.data["暴击伤害"] > 0) ? critdam_pos : 0;
 
     for (int lifebase = life_base; lifebase >= 0; lifebase--)
         for (int lifeup = min((int) round(max_attribute_num_per_pos * life_pos) - lifebase, max_up_num_per_base * lifebase); lifeup >= 0; lifeup--)
@@ -446,4 +458,3 @@ void Deployment::cal_optimal_entry_num()
                 }
         }
 }
-

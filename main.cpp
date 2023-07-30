@@ -1,5 +1,8 @@
 #include <iostream>
 #include <fstream>
+#include <thread>
+#include <chrono>
+#include <algorithm>
 #include "Basic_Elements.h"
 #include "Character.h"
 #include "Weapon.h"
@@ -11,6 +14,7 @@ int max_up_num_per_base = 4;
 double max_attribute_num_per_pos = 2.5;
 int max_entry_num = 30;
 int artifact_2_2_max_entry_bonus = 2;
+double out_filter_percentage = 0.95;//0.95*(1+2.5%)*(1+2.5%)=1 2词条
 
 string mac_data_path = "/Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinData/";
 string win_data_path = R"(C:\Users\Maxwell\Desktop\Genshin\GenshinData\)";
@@ -26,7 +30,7 @@ void generate_sample_config()
 }
 
 //func 2
-pair<string, string> main_convert(string ele_type, string main)
+pair<string, string> main_convert(const string &ele_type, const string &main)
 {
     if (main == "生命值") return make_pair("hp%", "0.466");
     if (main == "攻击力") return make_pair("atk%", "0.466");
@@ -223,54 +227,58 @@ void generate_gcsim_script(Config_File *config)
 }
 
 //func 3
+vector<Character *> Character_list;
+vector<Weapon *> Weapon_list;
+vector<Artifact *> Artifact_list;
+string a_main3[5] = {"生命值", "攻击力", "防御力", "元素精通", "元素充能效率"};
+string a_main4[5] = {"生命值", "攻击力", "防御力", "元素精通", "伤害加成"};
+string a_main5[7] = {"生命值", "攻击力", "防御力", "元素精通", "暴击率", "暴击伤害", "治疗加成"};
+
 void cal_optimal_combination(Config_File *config)
 {
     ofstream outfile;
     if (os_type == "MAC") outfile.open(mac_data_path + config->team_name + "/optimized_substats.csv");
     else if (os_type == "WIN") outfile.open(win_data_path + config->team_name + R"(\optimized_substats.csv)");
+    outfile << "人物名称" << "," << "队友信息" << "," << "武器名称" << "," << "圣遗物1" << "," << "圣遗物2" << "," << "3号位" << "," << "4号位" << "," << "5号位" << "," << "期望伤害" << "," << "RATIO" << ","
+            << "lifenum" << "," << "atknum" << "," << "defnum" << "," << "masterynum" << "," << "rechargenum" << "," << "critratenum" << "," << "critdamnum" << "\n";
 
-    for (int i = 0; i < 4; ++i)
+    for (auto &i: config->ori)
     {
-        c_point =
-    }
+        vector<Deployment *> out;
+        auto total_start = chrono::system_clock::now();
 
-    vector<Deployment *> out;
-    auto total_start = chrono::system_clock::now();
-
-    for (auto &w_index: Weapon_list)
-    {
-        if (characterInfo->c_point->weapon_type != w_index->weapon_type) continue;
-
-        vector<Group *> c_w_pair;
-        vector<thread> ths;
-        auto start = chrono::system_clock::now();
-
-        for (auto &res_index: characterInfo->cal_all_restriction)
+        auto c_index = i->rotation[0]->team[0]->c_point;
+        for (auto &w_index: Weapon_list)
         {
-            if (!res_index->weapon.empty() && res_index->weapon.find(w_index->name) == string::npos) continue;
-            for (int a_index1 = 0; a_index1 < artifact_list.size(); a_index1++)
-            {
-                if (!res_index->suit1.empty() && res_index->suit1.find(artifact_list[a_index1]->name) == string::npos) continue;
-                for (int a_index2 = a_index1; a_index2 < artifact_list.size(); a_index2++)
-                {
-                    if (!res_index->suit2.empty() && res_index->suit2.find(artifact_list[a_index2]->name) == string::npos) continue;
-                    for (int main3_index = 0; main3_index < 5; main3_index++)
-                    {
-                        if (!res_index->main3.empty() && res_index->main3.find(a_main3[main3_index]) == string::npos) continue;
-                        for (int main4_index = (main3_index == 4) ? 0 : main3_index; main4_index < 5; main4_index++)
-                        {
-                            if (!res_index->main4.empty() && res_index->main4.find(a_main4[main4_index]) == string::npos) continue;
-                            for (int main5_index = (main4_index == 4) ? ((main3_index == 4) ? 0 : main3_index) : main4_index; main5_index < 7; main5_index++)
-                            {
-                                if (!res_index->main5.empty() && res_index->main5.find(a_main5[main5_index]) == string::npos) continue;
+            if (c_index->weapon_type != w_index->weapon_type) continue;
 
-                                auto *temp = new Group(characterInfo->c_point, w_index, artifact_list[a_index1], artifact_list[a_index2], a_main3[main3_index], a_main4[main4_index], a_main5[main5_index],
-                                                       characterInfo->team_config, characterInfo->attack_config_list, characterInfo->recharge_restriction);
-                                int check_num = temp->init_check_data("cal_optimal_substats");
+            vector<Deployment *> c_w_pair;
+            vector<thread> ths;
+            auto start = chrono::system_clock::now();
+
+            for (int s1_index = 0; s1_index < Artifact_list.size(); ++s1_index)
+            {
+                for (int s2_index = s1_index; s2_index < Artifact_list.size(); ++s2_index)
+                {
+                    for (int m3_index = 0; m3_index < 5; m3_index++)
+                    {
+                        for (int m4_index = (m3_index == 4) ? 0 : m3_index; m4_index < 5; m4_index++)
+                        {
+                            for (int m5_index = (m4_index == 4) ? ((m3_index == 4) ? 0 : m3_index) : m4_index; m5_index < 7; m5_index++)
+                            {
+                                auto self = new Combination(c_index, w_index, Artifact_list[s1_index], Artifact_list[s2_index],
+                                                            a_main3[m3_index], a_main4[m4_index], a_main5[m5_index], i->rotation);
+                                vector<Single_Attack *> new_s_a;
+                                for (auto &s_a: i->rotation)
+                                    new_s_a.push_back(new Single_Attack(self, s_a->team[1], s_a->team[2], s_a->team[3], s_a->ele_attach_type, s_a->attack_way,
+                                                                        s_a->release_or_hit, s_a->rate_pos, s_a->background, s_a->react_type, s_a->attack_time));
+
+                                auto temp = new Deployment(new_s_a);
+                                int check_num = temp->get_all_data();
                                 if (check_num == 0)//pass
                                 {
                                     c_w_pair.push_back(temp);
-                                    ths.emplace_back(&Group::cal_damage_entry_num, temp);
+                                    ths.emplace_back(&Deployment::cal_optimal_entry_num, temp);
                                 }
                                 else if (check_num == 1)//error:suit1
                                 {
@@ -297,11 +305,6 @@ void cal_optimal_combination(Config_File *config)
                                     delete temp;
                                     goto NEXTMAIN5;
                                 }
-                                else if (check_num == 6)//error:recharge
-                                {
-                                    delete temp;
-                                    goto NEXTMAIN5;
-                                }
                                 NEXTMAIN5:;
                             }
                             NEXTMAIN4:;
@@ -312,43 +315,59 @@ void cal_optimal_combination(Config_File *config)
                 }
                 NEXTARTIFACT1:;
             }
+
+            for (auto &th: ths) th.join();
+            chrono::duration<double> time = chrono::system_clock::now() - start;
+
+            if (!c_w_pair.empty())
+            {
+                stable_sort(c_w_pair.begin(), c_w_pair.end());
+                double optimal_damage = c_w_pair[0]->total_damage;
+                for (auto &c_w: c_w_pair)
+                    if (c_w->total_damage / optimal_damage >= out_filter_percentage) out.push_back(c_w);
+                    else delete c_w;
+            }
+            c_w_pair.clear();
+            ths.clear();
+
+            cout << c_index->name << " " << w_index->name << " " << " time=" << time.count() << "s" << ((time.count() > 30) ? "!!!" : "") << endl;
         }
 
-        for (auto &th: ths) th.join();
-
-        chrono::duration<double> time = chrono::system_clock::now() - start;
-
-        if (!c_w_pair.empty())
+        if (!out.empty())
         {
-            Group *optimal = c_w_pair[0];
-            for (auto &i: c_w_pair)
-                if (i->total_damage > optimal->total_damage)
-                    optimal = i;
-            for (auto &i: c_w_pair)
+            stable_sort(out.begin(), out.end());
+            double total_damage_baseline = out[0]->total_damage;
+            for (auto &d: out)
             {
-                if (i->total_damage / optimal->total_damage >= out_filter_percentage) comb_out_data.push_back(i);
-                else delete i;
+                outfile << d->rotation[0]->team[0]->c_point->name << ","
+                        << ("(" + d->rotation[0]->team[1]->c_point->name + "_" + d->rotation[0]->team[1]->w_point->name + "_" + d->rotation[0]->team[1]->suit1->name + "_" + d->rotation[0]->team[1]->suit2->name + ")")
+                        << ("(" + d->rotation[0]->team[2]->c_point->name + "_" + d->rotation[0]->team[2]->w_point->name + "_" + d->rotation[0]->team[2]->suit1->name + "_" + d->rotation[0]->team[2]->suit2->name + ")")
+                        << ("(" + d->rotation[0]->team[3]->c_point->name + "_" + d->rotation[0]->team[3]->w_point->name + "_" + d->rotation[0]->team[3]->suit1->name + "_" + d->rotation[0]->team[3]->suit2->name + ")") << ","
+                        << d->rotation[0]->team[0]->w_point->name << ","
+                        << d->rotation[0]->team[0]->suit1->name << ","
+                        << d->rotation[0]->team[0]->suit2->name << ","
+                        << d->rotation[0]->team[0]->a_main3 << ","
+                        << d->rotation[0]->team[0]->a_main4 << ","
+                        << d->rotation[0]->team[0]->a_main5 << ","
+                        << d->total_damage << ","
+                        << d->total_damage / total_damage_baseline << ","
+                        << d->entry_num.data["生命值"] << ","
+                        << d->entry_num.data["攻击力"] << ","
+                        << d->entry_num.data["防御力"] << ","
+                        << d->entry_num.data["元素精通"] << ","
+                        << d->entry_num.data["元素充能效率"] << ","
+                        << d->entry_num.data["暴击率"] << ","
+                        << d->entry_num.data["暴击伤害"] << "\n";
+                delete d;
             }
         }
-        c_w_pair.clear();
+        out.clear();
 
-        cout << characterInfo->c_point->name << " " << w_index->name << " " << " time=" << time.count() << "s" << ((time.count() > 30) ? "!!!" : "") << endl;
+        chrono::duration<double> total_time = chrono::system_clock::now() - total_start;
+        cout << "total_time:" << total_time.count() << "s" << endl;
     }
 
-    if (!comb_out_data.empty())
-    {
-        stable_sort(comb_out_data.begin(), comb_out_data.end(), cmp_func);
-        double total_damage_baseline = comb_out_data[0]->total_damage;
-        for (auto &i: comb_out_data)
-        {
-            i->out(total_damage_baseline);
-            delete i;
-        }
-    }
-    comb_out_data.clear();
-
-    chrono::duration<double> total_time = chrono::system_clock::now() - total_start;
-    cout << "total_time:" << total_time.count() << "s" << endl;
+    outfile.close();
 }
 
 int main()
@@ -388,11 +407,10 @@ int main()
                 getline(infile, file_str);
                 file.push_back(file_str);
             }
-            auto *config = new Config_File(i, file);
-
-            generate_gcsim_script(config);
-
             infile.close();
+
+            auto *config = new Config_File(i, file);
+            generate_gcsim_script(config);
             delete config;
         }
     }
@@ -420,11 +438,10 @@ int main()
                 getline(infile, file_str);
                 file.push_back(file_str);
             }
-            auto *config = new Config_File(i, file);
-
-            cal_optimal_combination(config);
-
             infile.close();
+
+            auto *config = new Config_File(i, file);
+            cal_optimal_combination(config);
             delete config;
         }
     }
