@@ -26,11 +26,13 @@ Character::Character(string name_,
                      double E_energy_,
                      bool E_lockface_,
                      const attribute_data<int> &E_useful_attributes_,
+                     string E_ele_type_,
                      const vector<double> &E_13, const vector<double> &E_12, const vector<double> &E_10, const vector<double> &E_9,
                      int Q_level_,
                      int Q_energy_,
                      bool Q_lockface_,
                      const attribute_data<int> &Q_useful_attributes_,
+                     string Q_ele_type_,
                      const vector<double> &Q_13, const vector<double> &Q_12, const vector<double> &Q_10, const vector<double> &Q_9,
                      int constellation_)
 {
@@ -57,6 +59,7 @@ Character::Character(string name_,
     E_energy = E_energy_;
     E_lockface = E_lockface_;
     E_useful_attributes = E_useful_attributes_;
+    E_ele_type = std::move(E_ele_type_);
     E.push_back(E_13);
     E.push_back(E_12);
     E.push_back(E_10);
@@ -65,6 +68,7 @@ Character::Character(string name_,
     Q_energy = Q_energy_;
     Q_lockface = Q_lockface_;
     Q_useful_attributes = Q_useful_attributes_;
+    Q_ele_type = std::move(Q_ele_type_);
     Q.push_back(Q_13);
     Q.push_back(Q_12);
     Q.push_back(Q_10);
@@ -97,6 +101,8 @@ string Character::get_ele_type(const string &attack_way)
     if (attack_way == "平A") return normal_A_ele_type;
     else if (attack_way == "重A") return heavy_A_ele_type;
     else if (attack_way == "下落A") return down_A_ele_type;
+    else if (attack_way == "E") return E_ele_type;
+    else if (attack_way == "Q") return Q_ele_type;
     else return ele_type;
 }
 

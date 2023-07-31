@@ -71,7 +71,6 @@ void generate_gcsim_script(Config_File *config)
         replace_all(i, "平A", "attack");
         replace_all(i, "重A", "charge");
         replace_all(i, "下落A", "high_plunge");
-        replace_all(i, "长E", "skill[hold=1]");
         replace_all(i, "E", "skill");
         replace_all(i, "Q", "burst");
         replace_all(i, "冲刺", "dash");

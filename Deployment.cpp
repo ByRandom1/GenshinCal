@@ -24,12 +24,18 @@ Combination::Combination(Character *c_point_,
     a_main5 = std::move(a_main5_);
     ori_attack_list = std::move(ori_attack_list_);
     require_recharge = false;
+    for (auto &i: ori_attack_list)
+        if (i->attack_way == "Q" && "release" <= i->release_or_hit)
+        {
+            require_recharge = true;
+            break;
+        }
 }
 
 void Combination::add_attack_list(const vector<Single_Attack *> &ori_attack_list_)
 {
     ori_attack_list = ori_attack_list_;
-    for (auto &i: ori_attack_list_)
+    for (auto &i: ori_attack_list)
         if (i->attack_way == "Q" && "release" <= i->release_or_hit)
         {
             require_recharge = true;
@@ -316,13 +322,14 @@ int Deployment::get_all_data()
     {
         double Q_energy_modify = 0.0;
         double energy = 10.0;
-        for (auto &i: rotation[0]->team)
-            i->c_point->get_recharge_energy(rotation[0], Q_energy_modify, energy);
-        rotation[0]->team[0]->w_point->get_recharge_energy(rotation[0], Q_energy_modify, energy);
-        rotation[0]->team[0]->suit1->get_recharge_energy(rotation[0], Q_energy_modify, energy);
-        min_recharge = max(Q_energy_modify / energy, 1.0);
+        rotation[0]->team[0]->c_point->get_recharge_energy(rotation[0]->team, Q_energy_modify, energy);
+        rotation[0]->team[1]->c_point->get_recharge_energy(rotation[0]->team, Q_energy_modify, energy);
+        rotation[0]->team[2]->c_point->get_recharge_energy(rotation[0]->team, Q_energy_modify, energy);
+        rotation[0]->team[3]->c_point->get_recharge_energy(rotation[0]->team, Q_energy_modify, energy);
+        rotation[0]->team[0]->w_point->get_recharge_energy(rotation[0]->team, Q_energy_modify, energy);
+        rotation[0]->team[0]->suit1->get_recharge_energy(rotation[0]->team, Q_energy_modify, energy);
+        min_recharge = max(Q_energy_modify / energy, 0.0);
     }
-    else min_recharge = 0.0;
 
     return 0;
 }

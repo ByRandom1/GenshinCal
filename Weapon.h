@@ -9,15 +9,18 @@
 
 class Single_Attack;
 
+class Combination;
+
 class Config_File;
 
 class Weapon
 {
-protected:
     //static data (unconditional)
+public:
     string name;
     string english_name;
     string weapon_type;
+protected:
     int atk;
     attribute_data<double> break_value;
     int level;
@@ -40,7 +43,7 @@ public:
 
     virtual attribute_data<double> get_team(const Single_Attack *attack_config) = 0;
 
-    virtual void get_recharge_energy(const Single_Attack *attack_config, double &Q_energy_modify, double &energy) = 0;
+    virtual void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy) = 0;
 
     virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel) = 0;
 
@@ -51,10 +54,6 @@ public:
     virtual ~Weapon() = default;
 
     friend void generate_gcsim_script(Config_File *config);
-
-    friend void cal_optimal_combination(Config_File *config);
-
-    friend Weapon *find_weapon_by_name(const string &name);
 };
 
 extern vector<Weapon *> Weapon_list;

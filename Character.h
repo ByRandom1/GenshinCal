@@ -11,16 +11,19 @@ using namespace std;
 
 class Single_Attack;
 
+class Combination;
+
 class Config_File;
 
 class Character
 {
-protected:
     //static data (unconditional)
+public:
     string name;
     string english_name;
     string ele_type;
     string weapon_type;
+protected:
     int life;
     int atk;
     int def;
@@ -37,11 +40,13 @@ protected:
     double E_energy;
     bool E_lockface;
     attribute_data<int> E_useful_attributes;
+    string E_ele_type;
     vector<vector<double>> E;
     int Q_level;
     double Q_energy;
     bool Q_lockface;
     attribute_data<int> Q_useful_attributes;
+    string Q_ele_type;
     vector<vector<double>> Q;
     int constellation;
 
@@ -66,11 +71,13 @@ public:
               double E_energy_,
               bool E_lockface_,
               const attribute_data<int> &E_useful_attributes_,
+              string E_ele_type_,
               const vector<double> &E_13, const vector<double> &E_12, const vector<double> &E_10, const vector<double> &E_9,
               int Q_level_,
               int Q_energy_,
               bool Q_lockface_,
               const attribute_data<int> &Q_useful_attributes_,
+              string Q_ele_type_,
               const vector<double> &Q_13, const vector<double> &Q_12, const vector<double> &Q_10, const vector<double> &Q_9,
               int constellation_);
 
@@ -92,7 +99,7 @@ public:
 
     virtual attribute_data<double> get_team(const Single_Attack *attack_config) = 0;
 
-    virtual void get_recharge_energy(const Single_Attack *attack_config, double &Q_energy_modify, double &energy) = 0;
+    virtual void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy) = 0;
 
     virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel) = 0;
 
@@ -103,10 +110,6 @@ public:
     virtual ~Character() = default;
 
     friend void generate_gcsim_script(Config_File *config);
-
-    friend void cal_optimal_combination(Config_File *config);
-
-    friend Character *find_character_by_name(const string &name);
 };
 
 extern vector<Character *> Character_list;

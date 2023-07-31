@@ -9,15 +9,16 @@
 
 class Single_Attack;
 
+class Combination;
+
 class Config_File;
 
 class Artifact
 {
-protected:
+public:
     string name;
     string english_name;
 
-public:
     Artifact(string name_,
              string english_name_);
 
@@ -28,7 +29,7 @@ public:
 
     virtual attribute_data<double> get_team(const Single_Attack *attack_config) = 0;
 
-    virtual void get_recharge_energy(const Single_Attack *attack_config, double &Q_energy_modify, double &energy) = 0;
+    virtual void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy) = 0;
 
     virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel) = 0;
 
@@ -39,10 +40,6 @@ public:
     virtual ~Artifact() = default;
 
     friend void generate_gcsim_script(Config_File *config);
-
-    friend void cal_optimal_combination(Config_File *config);
-
-    friend Artifact *find_artifact_by_name(const string &name);
 };
 
 extern vector<Artifact *> Artifact_list;

@@ -36,7 +36,7 @@ include CMakeFiles/rules.ninja
 #############################################
 # Logical path to working directory; prefix for absolute paths.
 
-cmake_ninja_workdir = /Users/maxwell/Desktop/CODE/GenshinCal/cmake-build-debug/
+cmake_ninja_workdir = /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/cmake-build-debug/
 # =============================================================================
 # Object build statements for EXECUTABLE target GenshinCal
 
@@ -46,61 +46,43 @@ cmake_ninja_workdir = /Users/maxwell/Desktop/CODE/GenshinCal/cmake-build-debug/
 
 build cmake_object_order_depends_target_GenshinCal: phony || CMakeFiles/GenshinCal.dir
 
-build CMakeFiles/GenshinCal.dir/main.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/main.cpp || cmake_object_order_depends_target_GenshinCal
+build CMakeFiles/GenshinCal.dir/main.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/main.cpp || cmake_object_order_depends_target_GenshinCal
   DEP_FILE = CMakeFiles/GenshinCal.dir/main.cpp.o.d
   FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
   OBJECT_DIR = CMakeFiles/GenshinCal.dir
   OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
 
-build CMakeFiles/GenshinCal.dir/Character.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/Character.cpp || cmake_object_order_depends_target_GenshinCal
+build CMakeFiles/GenshinCal.dir/Character.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/Character.cpp || cmake_object_order_depends_target_GenshinCal
   DEP_FILE = CMakeFiles/GenshinCal.dir/Character.cpp.o.d
   FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
   OBJECT_DIR = CMakeFiles/GenshinCal.dir
   OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
 
-build CMakeFiles/GenshinCal.dir/Weapon.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/Weapon.cpp || cmake_object_order_depends_target_GenshinCal
+build CMakeFiles/GenshinCal.dir/Weapon.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/Weapon.cpp || cmake_object_order_depends_target_GenshinCal
   DEP_FILE = CMakeFiles/GenshinCal.dir/Weapon.cpp.o.d
   FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
   OBJECT_DIR = CMakeFiles/GenshinCal.dir
   OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
 
-build CMakeFiles/GenshinCal.dir/Artifact.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/Artifact.cpp || cmake_object_order_depends_target_GenshinCal
+build CMakeFiles/GenshinCal.dir/Artifact.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/Artifact.cpp || cmake_object_order_depends_target_GenshinCal
   DEP_FILE = CMakeFiles/GenshinCal.dir/Artifact.cpp.o.d
   FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
   OBJECT_DIR = CMakeFiles/GenshinCal.dir
   OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
 
-build CMakeFiles/GenshinCal.dir/Character_data.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/Character_data.cpp || cmake_object_order_depends_target_GenshinCal
-  DEP_FILE = CMakeFiles/GenshinCal.dir/Character_data.cpp.o.d
-  FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
-  OBJECT_DIR = CMakeFiles/GenshinCal.dir
-  OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
-
-build CMakeFiles/GenshinCal.dir/Weapon_data.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/Weapon_data.cpp || cmake_object_order_depends_target_GenshinCal
-  DEP_FILE = CMakeFiles/GenshinCal.dir/Weapon_data.cpp.o.d
-  FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
-  OBJECT_DIR = CMakeFiles/GenshinCal.dir
-  OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
-
-build CMakeFiles/GenshinCal.dir/Artifact_data.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/Artifact_data.cpp || cmake_object_order_depends_target_GenshinCal
-  DEP_FILE = CMakeFiles/GenshinCal.dir/Artifact_data.cpp.o.d
-  FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
-  OBJECT_DIR = CMakeFiles/GenshinCal.dir
-  OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
-
-build CMakeFiles/GenshinCal.dir/Deployment.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/Deployment.cpp || cmake_object_order_depends_target_GenshinCal
-  DEP_FILE = CMakeFiles/GenshinCal.dir/Deployment.cpp.o.d
-  FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
-  OBJECT_DIR = CMakeFiles/GenshinCal.dir
-  OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
-
-build CMakeFiles/GenshinCal.dir/Basic_Elements.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/Basic_Elements.cpp || cmake_object_order_depends_target_GenshinCal
+build CMakeFiles/GenshinCal.dir/Basic_Elements.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/Basic_Elements.cpp || cmake_object_order_depends_target_GenshinCal
   DEP_FILE = CMakeFiles/GenshinCal.dir/Basic_Elements.cpp.o.d
   FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
   OBJECT_DIR = CMakeFiles/GenshinCal.dir
   OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
 
-build CMakeFiles/GenshinCal.dir/Config_File.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Desktop/CODE/GenshinCal/Config_File.cpp || cmake_object_order_depends_target_GenshinCal
+build CMakeFiles/GenshinCal.dir/Deployment.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/Deployment.cpp || cmake_object_order_depends_target_GenshinCal
+  DEP_FILE = CMakeFiles/GenshinCal.dir/Deployment.cpp.o.d
+  FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
+  OBJECT_DIR = CMakeFiles/GenshinCal.dir
+  OBJECT_FILE_DIR = CMakeFiles/GenshinCal.dir
+
+build CMakeFiles/GenshinCal.dir/Config_File.cpp.o: CXX_COMPILER__GenshinCal_Debug /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/Config_File.cpp || cmake_object_order_depends_target_GenshinCal
   DEP_FILE = CMakeFiles/GenshinCal.dir/Config_File.cpp.o.d
   FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -std=gnu++2b
   OBJECT_DIR = CMakeFiles/GenshinCal.dir
@@ -114,7 +96,7 @@ build CMakeFiles/GenshinCal.dir/Config_File.cpp.o: CXX_COMPILER__GenshinCal_Debu
 #############################################
 # Link the executable GenshinCal
 
-build GenshinCal: CXX_EXECUTABLE_LINKER__GenshinCal_Debug CMakeFiles/GenshinCal.dir/main.cpp.o CMakeFiles/GenshinCal.dir/Character.cpp.o CMakeFiles/GenshinCal.dir/Weapon.cpp.o CMakeFiles/GenshinCal.dir/Artifact.cpp.o CMakeFiles/GenshinCal.dir/Character_data.cpp.o CMakeFiles/GenshinCal.dir/Weapon_data.cpp.o CMakeFiles/GenshinCal.dir/Artifact_data.cpp.o CMakeFiles/GenshinCal.dir/Deployment.cpp.o CMakeFiles/GenshinCal.dir/Basic_Elements.cpp.o CMakeFiles/GenshinCal.dir/Config_File.cpp.o
+build GenshinCal: CXX_EXECUTABLE_LINKER__GenshinCal_Debug CMakeFiles/GenshinCal.dir/main.cpp.o CMakeFiles/GenshinCal.dir/Character.cpp.o CMakeFiles/GenshinCal.dir/Weapon.cpp.o CMakeFiles/GenshinCal.dir/Artifact.cpp.o CMakeFiles/GenshinCal.dir/Basic_Elements.cpp.o CMakeFiles/GenshinCal.dir/Deployment.cpp.o CMakeFiles/GenshinCal.dir/Config_File.cpp.o
   FLAGS = -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk
   OBJECT_DIR = CMakeFiles/GenshinCal.dir
   POST_BUILD = :
@@ -127,7 +109,7 @@ build GenshinCal: CXX_EXECUTABLE_LINKER__GenshinCal_Debug CMakeFiles/GenshinCal.
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/maxwell/Desktop/CODE/GenshinCal/cmake-build-debug && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  COMMAND = cd /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/cmake-build-debug && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -138,7 +120,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /Users/maxwell/Desktop/CODE/GenshinCal/cmake-build-debug && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --regenerate-during-build -S/Users/maxwell/Desktop/CODE/GenshinCal -B/Users/maxwell/Desktop/CODE/GenshinCal/cmake-build-debug
+  COMMAND = cd /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/cmake-build-debug && /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --regenerate-during-build -S/Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal -B/Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/cmake-build-debug
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -154,7 +136,7 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # =============================================================================
 
 #############################################
-# Folder: /Users/maxwell/Desktop/CODE/GenshinCal/cmake-build-debug
+# Folder: /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/cmake-build-debug
 
 build all: phony GenshinCal
 

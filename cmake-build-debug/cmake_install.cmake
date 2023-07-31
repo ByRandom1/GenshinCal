@@ -1,4 +1,4 @@
-# Install script for directory: /Users/maxwell/Desktop/CODE/GenshinCal
+# Install script for directory: /Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/maxwell/Desktop/CODE/GenshinCal/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinCal/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
