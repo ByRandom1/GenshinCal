@@ -3,6 +3,7 @@
 //
 
 #include "Character.h"
+#include "Deployment.h"
 
 #include <utility>
 
@@ -148,15 +149,87 @@ double Character::get_rate(const string &attack_way, int pos)
     return 0;
 }
 
-Character *find_character_by_name(const string &name)
+attribute_data<double> Character::get_extra(const Single_Attack *attack_config)
 {
-    for (auto &c: Character_list)
-        if (c->name == name)
-            return c;
-    return nullptr;
+    return {};
 }
 
-void init_Character_list()
+attribute_data<double> Character::get_team(const Single_Attack *attack_config)
 {
+    return {};
+}
 
+void Character::get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy)
+{}
+
+attribute_data<double> Character::get_convert(const Single_Attack *attack_config, attribute_data<double> panel)
+{
+    return {};
+}
+
+double Character::get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel)
+{
+    return 0;
+}
+
+double Character::get_react_bonus(const Single_Attack *attack_config, string react_type)
+{
+    return 0;
+}
+
+Hutao::Hutao(int A_level, int E_level, int Q_level, int constellation) : Character("胡桃", "hutao", "火", "长柄武器", 15552, 107, 876, attribute_data("暴击伤害", 0.384),
+                                                                                   A_level, attribute_data(1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "火", vector<double>{0.836, 0.861, 1.089, 1.171, 0.594, 0.628, 1.534}, vector<double>{0.789, 0.812, 1.027, 1.104, 0.56, 0.592, 1.446},
+                                                                                   "火", vector<double>{2.426}, vector<double>{2.287}, "火", vector<double>{2.92}, vector<double>{2.75},
+                                                                                   E_level, 2.5, false, attribute_data(1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "火", vector<double>{1.36}, vector<double>{1.28}, vector<double>{1.15}, vector<double>{1.09},
+                                                                                   Q_level, 60, false, attribute_data(1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "火", vector<double>{7.06}, vector<double>{6.76}, vector<double>{6.17}, vector<double>{5.88},
+                                                                                   constellation)
+{}
+
+attribute_data<double> Hutao::get_extra(const Single_Attack *attack_config)
+{
+    attribute_data<double> result;
+    //talent:半血、火伤
+    result = result + attribute_data("伤害加成", 0.33);
+    return result;
+}
+
+attribute_data<double> Hutao::get_team(const Single_Attack *attack_config)
+{
+    attribute_data<double> result;
+    //talent:E结束后（11s）队友暴击率提升12% 8s
+    for (int i = 1; i < 4; ++i)
+        if (attack_config->team[i]->c_point == this)
+        {
+            for (auto x: attack_config->team[i]->ori_attack_list)
+                if (x->attack_way == "E" && "release" <= x->release_or_hit &&
+                    check_time_constrain(x->attack_time, attack_config->attack_time, attack_config->rotation_time, 8 + 11))
+                {
+                    result = result + attribute_data("暴击率", 0.12);
+                    break;
+                }
+            break;
+        }
+    return result;
+}
+
+void Hutao::get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy)
+{
+    //E下A，2.5/5s
+}
+
+attribute_data<double> Hutao::get_convert(const Single_Attack *attack_config, attribute_data<double> panel)
+{
+    attribute_data<double> result;
+    //skill:E下 生命->攻击
+    result = result + attribute_data("攻击力", min(panel.data["生命值"] * 0.0626 * life / atk, 4.0));
+    return result;
+}
+
+double Hutao::get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel)
+{
+    double result = 0;
+    //constellation 2:E +10%life
+    if (constellation >= 2 && attack_config->attack_way == "E" && "hit" <= attack_config->release_or_hit)
+        result = result + 0.1 * life * panel.data["生命值"];
+    return result;
 }

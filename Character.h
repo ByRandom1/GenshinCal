@@ -95,27 +95,42 @@ public:
 
     attribute_data<int> get_useful_attribute(const string &attack_way);
 
-    virtual attribute_data<double> get_extra(const Single_Attack *attack_config) = 0;
+    //动作是自己的
+    virtual attribute_data<double> get_extra(const Single_Attack *attack_config);
 
-    virtual attribute_data<double> get_team(const Single_Attack *attack_config) = 0;
+    //动作是别人的
+    virtual attribute_data<double> get_team(const Single_Attack *attack_config);
 
-    virtual void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy) = 0;
+    //[0]是求取充能的人
+    virtual void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy);
 
-    virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel) = 0;
+    //动作是自己的
+    virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel);
 
-    virtual double get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel) = 0;
+    //动作是自己的
+    virtual double get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel);
 
-    virtual double get_react_bonus(const Single_Attack *attack_config, string react_type) = 0;
-
-    virtual ~Character() = default;
+    //动作是自己的
+    virtual double get_react_bonus(const Single_Attack *attack_config, string react_type);
 
     friend void generate_gcsim_script(Config_File *config);
 };
 
-extern vector<Character *> Character_list;
+class Hutao : public Character
+{
+    //默认半血开E
+public:
+    Hutao(int A_level, int E_level, int Q_level, int constellation);
 
-Character *find_character_by_name(const string &name);
+    attribute_data<double> get_extra(const Single_Attack *attack_config);
 
-void init_Character_list();
+    attribute_data<double> get_team(const Single_Attack *attack_config);
+
+    void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy);
+
+    attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel);
+
+    double get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel);
+};
 
 #endif //GENSHINCAL_CHARACTER_H

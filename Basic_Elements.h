@@ -110,4 +110,7 @@ public:
 
 bool operator<=(const string &inf, const string &target);
 
+//front + constrain > back
+bool check_time_constrain(double front, double back, double rotation_time, double constrain);
+
 #endif //GENSHINCAL_BASIC_ELEMENTS_H

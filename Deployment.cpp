@@ -48,6 +48,7 @@ Single_Attack::Single_Attack(Combination *self,
                              Combination *teammate2,
                              Combination *teammate3,
                              string ele_attach_type_,
+                             double rotation_time_,
                              string attack_way_,
                              string release_or_hit_,
                              int rate_pos_,
@@ -60,6 +61,7 @@ Single_Attack::Single_Attack(Combination *self,
     team[2] = teammate2;
     team[3] = teammate3;
     ele_attach_type = std::move(ele_attach_type_);
+    rotation_time = rotation_time_;
     attack_way = std::move(attack_way_);
     release_or_hit = std::move(release_or_hit_);
     rate_pos = rate_pos_;

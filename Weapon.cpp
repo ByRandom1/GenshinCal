@@ -37,15 +37,35 @@ attribute_data<double> Weapon::get_break(const string &ele_type)
     else return break_value;
 }
 
-Weapon *find_weapon_by_name(const string &name)
+attribute_data<int> Weapon::get_useful_attribute(const Single_Attack *attack_config)
 {
-    for (auto &w: Weapon_list)
-        if (w->name == name)
-            return w;
-    return nullptr;
+    return attribute_data<int>();
 }
 
-void init_Weapon_list()
+attribute_data<double> Weapon::get_extra(const Single_Attack *attack_config)
 {
+    return attribute_data<double>();
+}
 
+attribute_data<double> Weapon::get_team(const Single_Attack *attack_config)
+{
+    return attribute_data<double>();
+}
+
+void Weapon::get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy)
+{}
+
+attribute_data<double> Weapon::get_convert(const Single_Attack *attack_config, attribute_data<double> panel)
+{
+    return attribute_data<double>();
+}
+
+double Weapon::get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel)
+{
+    return 0;
+}
+
+double Weapon::get_react_bonus(const Single_Attack *attack_config, string react_type)
+{
+    return 0;
 }

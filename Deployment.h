@@ -49,6 +49,7 @@ public:
     //team info (global)
     Combination *team[4];
     string ele_attach_type;
+    double rotation_time;
     //attack info (independent)
     string attack_way;
     string release_or_hit;
@@ -70,6 +71,7 @@ public:
                   Combination *teammate2,
                   Combination *teammate3,
                   string ele_attach_type_,
+                  double rotation_time_,
                   string attack_way_,
                   string release_or_hit_,
                   int rate_pos_,

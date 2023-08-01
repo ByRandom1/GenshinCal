@@ -227,8 +227,37 @@ void generate_gcsim_script(Config_File *config)
 
 //func 3
 vector<Character *> Character_list;
+
+Character *find_character_by_name(const string &name)
+{
+    for (auto &c: Character_list)
+        if (c->name == name)
+            return c;
+    return nullptr;
+}
+
+void init_Character_list()
+{
+    Character_list.push_back(new Hutao(10, 10, 10, 1));
+}
+
 vector<Weapon *> Weapon_list;
+
+Weapon *find_weapon_by_name(const string &name)
+{
+    for (auto &w: Weapon_list)
+        if (w->name == name)
+            return w;
+    return nullptr;
+}
+
+void init_Weapon_list()
+{
+
+}
+
 vector<Artifact *> Artifact_list;
+
 string a_main3[5] = {"生命值", "攻击力", "防御力", "元素精通", "元素充能效率"};
 string a_main4[5] = {"生命值", "攻击力", "防御力", "元素精通", "伤害加成"};
 string a_main5[7] = {"生命值", "攻击力", "防御力", "元素精通", "暴击率", "暴击伤害", "治疗加成"};

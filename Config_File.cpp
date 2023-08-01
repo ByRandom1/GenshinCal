@@ -34,6 +34,7 @@ Config_File::Config_File(string team_name_, vector<string> file)
 
     string ch[4];
     string ele_attach_type;
+    double rotation_time;
     Combination *team[4];
     vector<Single_Attack *> attack_config[4];
 
@@ -79,11 +80,12 @@ Config_File::Config_File(string team_name_, vector<string> file)
                     team[pos] = new Combination(find_character_by_name(ch[pos]), find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]),
                                                 find_artifact_by_name(params["suit2"]), "", "", "", vector<Single_Attack *>{});
                     ele_attach_type = params["ele_attach_type"];
+                    rotation_time = stod(params["rotation_time"]);
                 }
                 else if (info[2] == "attack_config")
                 {
                     map<string, string> params = get_params(info, '=');
-                    attack_config[pos].emplace_back(new Single_Attack(nullptr, nullptr, nullptr, nullptr, ele_attach_type, params["attack_way"], params["release_or_hit"],
+                    attack_config[pos].emplace_back(new Single_Attack(nullptr, nullptr, nullptr, nullptr, ele_attach_type, rotation_time, params["attack_way"], params["release_or_hit"],
                                                                       stoi(params["rate_pos"]), (bool) stoi(params["background"]), params["react_type"], stod(params["attack_time"])));
                 }
             }
@@ -132,19 +134,19 @@ string Config_File::generate_sample_config()
     result += "ATTACK_LIST END\n";
     result += "\n";
     result += "A add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "A add team_combination weapon= suit1= suit2= ele_attach_type=\n";
+    result += "A add team_combination weapon= suit1= suit2= ele_attach_type= rotation_time=\n";
     result += "A add attack_config attack_way= release_or_hit= rate_pos= background= react_type= attack_time=\n";
     result += "\n";
     result += "B add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "B add team_combination weapon= suit1= suit2= ele_attach_type=\n";
+    result += "B add team_combination weapon= suit1= suit2= ele_attach_type= rotation_time=\n";
     result += "B add attack_config attack_way= release_or_hit= rate_pos= background= react_type= attack_time=\n";
     result += "\n";
     result += "C add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "C add team_combination weapon= suit1= suit2= ele_attach_type=\n";
+    result += "C add team_combination weapon= suit1= suit2= ele_attach_type= rotation_time=\n";
     result += "C add attack_config attack_way= release_or_hit= rate_pos= background= react_type= attack_time=\n";
     result += "\n";
     result += "D add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "D add team_combination weapon= suit1= suit2= ele_attach_type=\n";
+    result += "D add team_combination weapon= suit1= suit2= ele_attach_type= rotation_time=\n";
     result += "D add attack_config attack_way= release_or_hit= rate_pos= background= react_type= attack_time=\n";
     return result;
 }
