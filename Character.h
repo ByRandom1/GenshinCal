@@ -9,25 +9,25 @@
 
 using namespace std;
 
-class Single_Attack;
+class Team_Config;
 
-class Combination;
+class Single_Attack;
 
 class Config_File;
 
 class Character
 {
     //static data (unconditional)
-public:
+protected:
     string name;
     string english_name;
-    string ele_type;
     string weapon_type;
-protected:
     int life;
     int atk;
     int def;
     attribute_data<double> break_value;
+
+    string ele_type;
     int A_level;
     attribute_data<int> A_useful_attributes;
     string normal_A_ele_type;
@@ -81,36 +81,36 @@ public:
               const vector<double> &Q_13, const vector<double> &Q_12, const vector<double> &Q_10, const vector<double> &Q_9,
               int constellation_);
 
+    string get_name();
+
+    string get_english_name();
+
+    string get_weapon_type();
+
     int get_life() const;
 
     int get_atk() const;
 
     int get_def() const;
 
-    attribute_data<double> get_break();
-
-    string get_ele_type(const string &attack_way);
-
     double get_rate(const string &attack_way, int pos);
 
-    attribute_data<int> get_useful_attribute(const string &attack_way);
+    attribute_data<double> get_break();
 
-    //动作是自己的
+    virtual string get_ele_type(const Single_Attack *attack_config);
+
+    virtual attribute_data<int> get_useful_attribute(const Single_Attack *attack_config);
+
     virtual attribute_data<double> get_extra(const Single_Attack *attack_config);
 
-    //动作是别人的
-    virtual attribute_data<double> get_team(const Single_Attack *attack_config);
+    virtual attribute_data<double> get_team(const Single_Attack *other_attack_config);
 
-    //[0]是求取充能的人
-    virtual void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy);
+    virtual void get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy);
 
-    //动作是自己的
     virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel);
 
-    //动作是自己的
     virtual double get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel);
 
-    //动作是自己的
     virtual double get_react_bonus(const Single_Attack *attack_config, string react_type);
 
     friend void generate_gcsim_script(Config_File *config);
@@ -122,11 +122,15 @@ class Hutao : public Character
 public:
     Hutao(int A_level, int E_level, int Q_level, int constellation);
 
+    string get_ele_type(const Single_Attack *attack_config);
+
+    attribute_data<int> get_useful_attribute(const Single_Attack *attack_config);
+
     attribute_data<double> get_extra(const Single_Attack *attack_config);
 
-    attribute_data<double> get_team(const Single_Attack *attack_config);
+    attribute_data<double> get_team(const Single_Attack *other_attack_config);
 
-    void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy);
+    void get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy);
 
     attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel);
 

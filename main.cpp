@@ -62,7 +62,7 @@ size_t replace_all(string &inout, string_view what, string_view with)
 void generate_gcsim_script(Config_File *config)
 {
     //处理attack_list
-    for (auto &i: config->attack_list)
+    for (auto &i: config->attack_script)
     {
         replace_all(i, config->gcsim[0][0]->c_point->name, config->gcsim[0][0]->c_point->english_name);
         replace_all(i, config->gcsim[1][0]->c_point->name, config->gcsim[1][0]->c_point->english_name);
@@ -197,12 +197,12 @@ void generate_gcsim_script(Config_File *config)
                     outfile << endl;
 
                     //active
-                    if (config->attack_list[0] == "rotation_start") outfile << "active " << config->attack_list[1].substr(0, config->attack_list[1].find_first_of(' ')) << ";" << endl;
-                    else outfile << "active " << config->attack_list[0].substr(0, config->attack_list[0].find_first_of(' ')) << ";" << endl;
+                    if (config->attack_script[0] == "rotation_start") outfile << "active " << config->attack_script[1].substr(0, config->attack_script[1].find_first_of(' ')) << ";" << endl;
+                    else outfile << "active " << config->attack_script[0].substr(0, config->attack_script[0].find_first_of(' ')) << ";" << endl;
                     outfile << endl;
 
                     //attack_list
-                    for (auto &i: config->attack_list)
+                    for (auto &i: config->attack_script)
                     {
                         if (i == "rotation_start") outfile << "for let x=0; x<5; x=x+1 {" << endl;
                         else if (i == "rotation_end") outfile << "}" << endl;
@@ -231,7 +231,7 @@ vector<Character *> Character_list;
 Character *find_character_by_name(const string &name)
 {
     for (auto &c: Character_list)
-        if (c->name == name)
+        if (c->get_name() == name)
             return c;
     return nullptr;
 }
@@ -246,7 +246,7 @@ vector<Weapon *> Weapon_list;
 Weapon *find_weapon_by_name(const string &name)
 {
     for (auto &w: Weapon_list)
-        if (w->name == name)
+        if (w->get_name() == name)
             return w;
     return nullptr;
 }
@@ -257,6 +257,19 @@ void init_Weapon_list()
 }
 
 vector<Artifact *> Artifact_list;
+
+Artifact *find_artifact_by_name(const string &name)
+{
+    for (auto &s: Artifact_list)
+        if (s->get_name() == name)
+            return s;
+    return nullptr;
+}
+
+void init_Artifact_list()
+{
+
+}
 
 string a_main3[5] = {"生命值", "攻击力", "防御力", "元素精通", "元素充能效率"};
 string a_main4[5] = {"生命值", "攻击力", "防御力", "元素精通", "伤害加成"};
@@ -270,15 +283,15 @@ void cal_optimal_combination(Config_File *config)
     outfile << "人物名称" << "," << "队友信息" << "," << "武器名称" << "," << "圣遗物1" << "," << "圣遗物2" << "," << "3号位" << "," << "4号位" << "," << "5号位" << "," << "期望伤害" << "," << "RATIO" << ","
             << "lifenum" << "," << "atknum" << "," << "defnum" << "," << "masterynum" << "," << "rechargenum" << "," << "critratenum" << "," << "critdamnum" << "\n";
 
-    for (auto &i: config->ori)
+    for (auto &i: config->attack_list)
     {
         vector<Deployment *> out;
         auto total_start = chrono::system_clock::now();
 
-        auto c_index = i->rotation[0]->team[0]->c_point;
+        auto c_index = i[0]->self->c_point;
         for (auto &w_index: Weapon_list)
         {
-            if (c_index->weapon_type != w_index->weapon_type) continue;
+            if (c_index->get_weapon_type() != w_index->get_weapon_type()) continue;
 
             vector<Deployment *> c_w_pair;
             vector<thread> ths;
@@ -295,11 +308,12 @@ void cal_optimal_combination(Config_File *config)
                             for (int m5_index = (m4_index == 4) ? ((m3_index == 4) ? 0 : m3_index) : m4_index; m5_index < 7; m5_index++)
                             {
                                 auto self = new Combination(c_index, w_index, Artifact_list[s1_index], Artifact_list[s2_index],
-                                                            a_main3[m3_index], a_main4[m4_index], a_main5[m5_index], i->rotation);
+                                                            a_main3[m3_index], a_main4[m4_index], a_main5[m5_index]);
                                 vector<Single_Attack *> new_s_a;
-                                for (auto &s_a: i->rotation)
-                                    new_s_a.push_back(new Single_Attack(self, s_a->team[1], s_a->team[2], s_a->team[3], s_a->ele_attach_type, s_a->attack_way,
-                                                                        s_a->release_or_hit, s_a->rate_pos, s_a->background, s_a->react_type, s_a->attack_time));
+                                new_s_a.reserve(i.size());
+                                for (auto &s_a: i)
+                                    new_s_a.push_back(new Single_Attack(self, s_a->team_config, s_a->attack_way, s_a->release_or_hit, s_a->rate_pos,
+                                                                        s_a->background, s_a->react_type, s_a->attack_time));
 
                                 auto temp = new Deployment(new_s_a);
                                 int check_num = temp->get_all_data();
@@ -358,7 +372,7 @@ void cal_optimal_combination(Config_File *config)
             c_w_pair.clear();
             ths.clear();
 
-            cout << c_index->name << " " << w_index->name << " " << " time=" << time.count() << "s" << ((time.count() > 30) ? "!!!" : "") << endl;
+            cout << c_index->get_name() << " " << w_index->get_name() << " " << " time=" << time.count() << "s" << ((time.count() > 30) ? "!!!" : "") << endl;
         }
 
         chrono::duration<double> total_time = chrono::system_clock::now() - total_start;
@@ -369,16 +383,17 @@ void cal_optimal_combination(Config_File *config)
             double total_damage_baseline = out[0]->total_damage;
             for (auto &d: out)
             {
-                outfile << d->rotation[0]->team[0]->c_point->name << ","
-                        << ("(" + d->rotation[0]->team[1]->c_point->name + "_" + d->rotation[0]->team[1]->w_point->name + "_" + d->rotation[0]->team[1]->suit1->name + "_" + d->rotation[0]->team[1]->suit2->name + ")")
-                        << ("(" + d->rotation[0]->team[2]->c_point->name + "_" + d->rotation[0]->team[2]->w_point->name + "_" + d->rotation[0]->team[2]->suit1->name + "_" + d->rotation[0]->team[2]->suit2->name + ")")
-                        << ("(" + d->rotation[0]->team[3]->c_point->name + "_" + d->rotation[0]->team[3]->w_point->name + "_" + d->rotation[0]->team[3]->suit1->name + "_" + d->rotation[0]->team[3]->suit2->name + ")") << ","
-                        << d->rotation[0]->team[0]->w_point->name << ","
-                        << d->rotation[0]->team[0]->suit1->name << ","
-                        << d->rotation[0]->team[0]->suit2->name << ","
-                        << d->rotation[0]->team[0]->a_main3 << ","
-                        << d->rotation[0]->team[0]->a_main4 << ","
-                        << d->rotation[0]->team[0]->a_main5 << ","
+                outfile << d->attack_list[0]->self->c_point->get_name() << ","
+                        << ("(" + d->attack_list[0]->team_config->team[0]->c_point->get_name() + "_" + d->attack_list[0]->team_config->team[0]->w_point->get_name() + "_" + d->attack_list[0]->team_config->team[0]->suit1->get_name() + "_" + d->attack_list[0]->team_config->team[0]->suit2->get_name() + ")")
+                        << ("(" + d->attack_list[0]->team_config->team[1]->c_point->get_name() + "_" + d->attack_list[0]->team_config->team[1]->w_point->get_name() + "_" + d->attack_list[0]->team_config->team[1]->suit1->get_name() + "_" + d->attack_list[0]->team_config->team[1]->suit2->get_name() + ")")
+                        << ("(" + d->attack_list[0]->team_config->team[2]->c_point->get_name() + "_" + d->attack_list[0]->team_config->team[2]->w_point->get_name() + "_" + d->attack_list[0]->team_config->team[2]->suit1->get_name() + "_" + d->attack_list[0]->team_config->team[2]->suit2->get_name() + ")")
+                        << ("(" + d->attack_list[0]->team_config->team[3]->c_point->get_name() + "_" + d->attack_list[0]->team_config->team[3]->w_point->get_name() + "_" + d->attack_list[0]->team_config->team[3]->suit1->get_name() + "_" + d->attack_list[0]->team_config->team[3]->suit2->get_name() + ")") << ","
+                        << d->attack_list[0]->self->w_point->get_name() << ","
+                        << d->attack_list[0]->self->suit1->get_name() << ","
+                        << d->attack_list[0]->self->suit2->get_name() << ","
+                        << d->attack_list[0]->self->a_main3 << ","
+                        << d->attack_list[0]->self->a_main4 << ","
+                        << d->attack_list[0]->self->a_main5 << ","
                         << d->total_damage << ","
                         << d->total_damage / total_damage_baseline << ","
                         << d->entry_num.data["生命值"] << ","

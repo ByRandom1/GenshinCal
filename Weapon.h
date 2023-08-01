@@ -7,20 +7,19 @@
 
 #include "Basic_Elements.h"
 
-class Single_Attack;
+class Team_Config;
 
-class Combination;
+class Single_Attack;
 
 class Config_File;
 
 class Weapon
 {
     //static data (unconditional)
-public:
+protected:
     string name;
     string english_name;
     string weapon_type;
-protected:
     int atk;
     attribute_data<double> break_value;
     int level;
@@ -33,6 +32,12 @@ public:
            const attribute_data<double> &break_value_,
            int level_);
 
+    string get_name();
+
+    string get_english_name();
+
+    string get_weapon_type();
+
     int get_atk() const;
 
     attribute_data<double> get_break(const string &ele_type);
@@ -41,9 +46,9 @@ public:
 
     virtual attribute_data<double> get_extra(const Single_Attack *attack_config);
 
-    virtual attribute_data<double> get_team(const Single_Attack *attack_config);
+    virtual attribute_data<double> get_team(const Single_Attack *other_attack_config);
 
-    virtual void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy);
+    virtual void get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy);
 
     virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel);
 

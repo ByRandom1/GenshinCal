@@ -16,8 +16,6 @@ extern double max_attribute_num_per_pos;
 extern int max_entry_num;
 extern int artifact_2_2_max_entry_bonus;
 
-class Single_Attack;
-
 struct Combination
 {
     Character *c_point;
@@ -28,28 +26,38 @@ struct Combination
     string a_main4;
     string a_main5;
 
-    vector<Single_Attack *> ori_attack_list;
-    bool require_recharge;
-
     Combination(Character *c_point_,
                 Weapon *w_point_,
                 Artifact *suit1_,
                 Artifact *suit2_,
                 string a_main3_,
                 string a_main4_,
-                string a_main5_,
-                vector<Single_Attack *> ori_attack_list_);
+                string a_main5_);
+};
 
-    void add_attack_list(const vector<Single_Attack *> &ori_attack_list_);
+class Single_Attack;
+
+class Team_Config
+{
+public:
+    Combination *team[4];
+    string ele_attach_type;
+    vector<Single_Attack *> rotation;
+    double rotation_time;
+
+    Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
+                string ele_attach_type_,
+                vector<Single_Attack *> rotation_,
+                double rotation_time_);
+
+    ~Team_Config();
 };
 
 class Single_Attack
 {
 public:
-    //team info (global)
-    Combination *team[4];
-    string ele_attach_type;
-    double rotation_time;
+    Combination *self;
+    Team_Config *team_config;
     //attack info (independent)
     string attack_way;
     string release_or_hit;
@@ -66,12 +74,8 @@ public:
     attribute_data<double> percentage;
     attribute_data<double> converted_percentage;
 
-    Single_Attack(Combination *self,
-                  Combination *teammate1,
-                  Combination *teammate2,
-                  Combination *teammate3,
-                  string ele_attach_type_,
-                  double rotation_time_,
+    Single_Attack(Combination *self_,
+                  Team_Config *team_config_,
                   string attack_way_,
                   string release_or_hit_,
                   int rate_pos_,
@@ -79,25 +83,27 @@ public:
                   string react_type_,
                   double attack_time_);
 
-    void get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_valid, bool &main4_valid, bool &main5_valid);
+    inline bool operator<(const Single_Attack &other) const;
+
+    void get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_valid, bool &main4_valid, bool &main5_valid, double min_recharge);
 
     double cal_damage(const attribute_data<double> &entry_value, double min_recharge);
 
-    void get_react_value(double mastery, double &extra_rate, double &grow_rate, double &extra_damage);
+    void get_react_value(double mastery, double &extra_rate, double &grow_rate, double &extra_damage) const;
 };
 
 class Deployment
 {
 public:
-    vector<Single_Attack *> rotation;
+    vector<Single_Attack *> attack_list;
     //get_all_data
-    attribute_data<int> collected_useful;
     double min_recharge;
+    attribute_data<int> collected_useful;
     //cal_optimal_entry_num
     attribute_data<int> entry_num;
     double total_damage;
 
-    explicit Deployment(const vector<Single_Attack *> &rotation_);
+    explicit Deployment(const vector<Single_Attack *> &attack_list_);
 
     ~Deployment();
 

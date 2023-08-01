@@ -11,6 +11,12 @@
 #include "Artifact.h"
 #include "Deployment.h"
 
+Character *find_character_by_name(const string &name);
+
+Weapon *find_weapon_by_name(const string &name);
+
+Artifact *find_artifact_by_name(const string &name);
+
 class Config_File
 {
 public:
@@ -19,9 +25,10 @@ public:
     vector<Combination *> gcsim[4];
     string options;
     string target;
-    vector<string> attack_list;
+    vector<string> attack_script;
 
-    Deployment *ori[4];
+    Team_Config *team_config;
+    vector<Single_Attack *> attack_list[4];
 
     Config_File(string team_name_, vector<string> file);
 

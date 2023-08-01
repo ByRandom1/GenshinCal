@@ -7,9 +7,9 @@
 
 #include "Basic_Elements.h"
 
-class Single_Attack;
+class Team_Config;
 
-class Combination;
+class Single_Attack;
 
 class Config_File;
 
@@ -22,14 +22,17 @@ public:
     Artifact(string name_,
              string english_name_);
 
+    string get_name() const;
+
+    string get_english_name() const;
+
     virtual attribute_data<int> get_useful_attribute(const Single_Attack *attack_config);
 
-    //考虑2件套和4件套，2件套去除后来的重复
     virtual attribute_data<double> get_extra(const Single_Attack *attack_config);
 
-    virtual attribute_data<double> get_team(const Single_Attack *attack_config);
+    virtual attribute_data<double> get_team(const Single_Attack *other_attack_config);
 
-    virtual void get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy);
+    virtual void get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy);
 
     virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel);
 

@@ -3,6 +3,7 @@
 //
 
 #include "Weapon.h"
+#include "Deployment.h"
 
 #include <utility>
 
@@ -21,10 +22,17 @@ Weapon::Weapon(string name_,
     level = level_;
 }
 
+string Weapon::get_name()
+{ return name; }
+
+string Weapon::get_english_name()
+{ return english_name; }
+
+string Weapon::get_weapon_type()
+{ return weapon_type; }
+
 int Weapon::get_atk() const
-{
-    return atk;
-}
+{ return atk; }
 
 attribute_data<double> Weapon::get_break(const string &ele_type)
 {
@@ -38,34 +46,22 @@ attribute_data<double> Weapon::get_break(const string &ele_type)
 }
 
 attribute_data<int> Weapon::get_useful_attribute(const Single_Attack *attack_config)
-{
-    return attribute_data<int>();
-}
+{ return {}; }
 
 attribute_data<double> Weapon::get_extra(const Single_Attack *attack_config)
-{
-    return attribute_data<double>();
-}
+{ return {}; }
 
-attribute_data<double> Weapon::get_team(const Single_Attack *attack_config)
-{
-    return attribute_data<double>();
-}
+attribute_data<double> Weapon::get_team(const Single_Attack *other_attack_config)
+{ return {}; }
 
-void Weapon::get_recharge_energy(Combination *ori_team[], double &Q_energy_modify, double &energy)
+void Weapon::get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy)
 {}
 
 attribute_data<double> Weapon::get_convert(const Single_Attack *attack_config, attribute_data<double> panel)
-{
-    return attribute_data<double>();
-}
+{ return {}; }
 
 double Weapon::get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel)
-{
-    return 0;
-}
+{ return 0; }
 
 double Weapon::get_react_bonus(const Single_Attack *attack_config, string react_type)
-{
-    return 0;
-}
+{ return 0; }
