@@ -283,12 +283,12 @@ void cal_optimal_combination(Config_File *config)
     outfile << "人物名称" << "," << "队友信息" << "," << "武器名称" << "," << "圣遗物1" << "," << "圣遗物2" << "," << "3号位" << "," << "4号位" << "," << "5号位" << "," << "期望伤害" << "," << "RATIO" << ","
             << "lifenum" << "," << "atknum" << "," << "defnum" << "," << "masterynum" << "," << "rechargenum" << "," << "critratenum" << "," << "critdamnum" << "\n";
 
-    for (auto &i: config->attack_list)
+    for (auto &i: config->team_config->team)
     {
         vector<Deployment *> out;
         auto total_start = chrono::system_clock::now();
 
-        auto c_index = i[0]->self->c_point;
+        auto c_index = i->c_point;
         for (auto &w_index: Weapon_list)
         {
             if (c_index->get_weapon_type() != w_index->get_weapon_type()) continue;
@@ -309,13 +309,7 @@ void cal_optimal_combination(Config_File *config)
                             {
                                 auto self = new Combination(c_index, w_index, Artifact_list[s1_index], Artifact_list[s2_index],
                                                             a_main3[m3_index], a_main4[m4_index], a_main5[m5_index]);
-                                vector<Single_Attack *> new_s_a;
-                                new_s_a.reserve(i.size());
-                                for (auto &s_a: i)
-                                    new_s_a.push_back(new Single_Attack(self, s_a->team_config, s_a->attack_way, s_a->release_or_hit, s_a->rate_pos,
-                                                                        s_a->background, s_a->react_type, s_a->attack_time));
-
-                                auto temp = new Deployment(new_s_a);
+                                auto temp = new Deployment(self, config->team_config);
                                 int check_num = temp->get_all_data();
                                 if (check_num == 0)//pass
                                 {

@@ -9,8 +9,6 @@
 
 using namespace std;
 
-class Team_Config;
-
 class Single_Attack;
 
 class Config_File;
@@ -83,8 +81,6 @@ public:
 
     string get_name();
 
-    string get_english_name();
-
     string get_weapon_type();
 
     int get_life() const;
@@ -97,44 +93,46 @@ public:
 
     attribute_data<double> get_break();
 
-    virtual string get_ele_type(const Single_Attack *attack_config);
+    virtual string get_ele_type(const Single_Attack *single_attack);
 
-    virtual attribute_data<int> get_useful_attribute(const Single_Attack *attack_config);
+    virtual attribute_data<int> get_useful_attribute(const Single_Attack *single_attack);
 
-    virtual attribute_data<double> get_extra(const Single_Attack *attack_config);
+    virtual attribute_data<double> get_extra(const Single_Attack *single_attack);
 
-    virtual attribute_data<double> get_team(const Single_Attack *other_attack_config);
+    virtual attribute_data<double> get_team(const Single_Attack *other_single_attack);
 
-    virtual void get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy);
+    //TODO:一般来说总是前台角色自产自销，但后台持续产球带来偏差，考虑到实现难度忽略
+    virtual void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy);
 
-    virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel);
+    virtual attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel);
 
-    virtual double get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel);
+    virtual double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel);
 
-    virtual double get_react_bonus(const Single_Attack *attack_config, string react_type);
+    virtual double get_react_bonus(const Single_Attack *single_attack, string react_type);
 
     friend void generate_gcsim_script(Config_File *config);
 };
 
 class Hutao : public Character
 {
-    //默认半血开E
+    //4、6命不建构
 public:
     Hutao(int A_level, int E_level, int Q_level, int constellation);
 
-    string get_ele_type(const Single_Attack *attack_config);
+    string get_ele_type(const Single_Attack *single_attack) override;
 
-    attribute_data<int> get_useful_attribute(const Single_Attack *attack_config);
+    attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_extra(const Single_Attack *attack_config);
+    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_team(const Single_Attack *other_attack_config);
+    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
 
-    void get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy);
+    attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
-    attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel);
+    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
-    double get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel);
+private:
+    vector<pair<double, double>> get_E_time(const Single_Attack *single_attack);
 };
 
 #endif //GENSHINCAL_CHARACTER_H

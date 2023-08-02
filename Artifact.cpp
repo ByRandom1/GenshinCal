@@ -17,26 +17,23 @@ Artifact::Artifact(string name_,
 string Artifact::get_name() const
 { return name; }
 
-string Artifact::get_english_name() const
-{ return english_name; }
-
-attribute_data<int> Artifact::get_useful_attribute(const Single_Attack *attack_config)
+attribute_data<int> Artifact::get_useful_attribute(const Single_Attack *single_attack)
 { return {}; }
 
-attribute_data<double> Artifact::get_extra(const Single_Attack *attack_config)
+attribute_data<double> Artifact::get_extra(const Single_Attack *single_attack)
 { return {}; }
 
-attribute_data<double> Artifact::get_team(const Single_Attack *other_attack_config)
+attribute_data<double> Artifact::get_team(const Single_Attack *other_single_attack)
 { return {}; }
 
-void Artifact::get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy)
+void Artifact::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
 {}
 
-attribute_data<double> Artifact::get_convert(const Single_Attack *attack_config, attribute_data<double> panel)
+attribute_data<double> Artifact::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 { return {}; }
 
-double Artifact::get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel)
+double Artifact::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
 { return 0; }
 
-double Artifact::get_react_bonus(const Single_Attack *attack_config, string react_type)
+double Artifact::get_react_bonus(const Single_Attack *single_attack, string react_type)
 { return 0; }

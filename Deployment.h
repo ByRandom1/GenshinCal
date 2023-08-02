@@ -35,19 +35,40 @@ struct Combination
                 string a_main5_);
 };
 
-class Single_Attack;
+struct Attack_Config
+{
+    Character *c_point;
+    string attack_way;
+    string release_or_hit;
+    int rate_pos;
+    bool background;
+    string react_type;
+    double attack_time;
 
-class Team_Config
+    Attack_Config(Character *c_point_,
+                  string attack_way_,
+                  string release_or_hit_,
+                  int rate_pos_,
+                  bool background_,
+                  string react_type_,
+                  double attack_time_);
+
+    inline bool operator<(const Attack_Config &other) const;
+};
+
+struct Team_Config
 {
 public:
     Combination *team[4];
+    int E_energy_num[4];
     string ele_attach_type;
-    vector<Single_Attack *> rotation;
+    vector<Attack_Config *> rotation;
     double rotation_time;
 
     Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
+                int E_energy_num1, int E_energy_num2, int E_energy_num3, int E_energy_num4,
                 string ele_attach_type_,
-                vector<Single_Attack *> rotation_,
+                vector<Attack_Config *> rotation_,
                 double rotation_time_);
 
     ~Team_Config();
@@ -58,13 +79,7 @@ class Single_Attack
 public:
     Combination *self;
     Team_Config *team_config;
-    //attack info (independent)
-    string attack_way;
-    string release_or_hit;
-    int rate_pos;
-    bool background;
-    string react_type;
-    double attack_time;
+    Attack_Config *attack_config;
     //get_data
     int base_life;
     int base_atk;
@@ -76,19 +91,13 @@ public:
 
     Single_Attack(Combination *self_,
                   Team_Config *team_config_,
-                  string attack_way_,
-                  string release_or_hit_,
-                  int rate_pos_,
-                  bool background_,
-                  string react_type_,
-                  double attack_time_);
-
-    inline bool operator<(const Single_Attack &other) const;
+                  Attack_Config *attack_config_);
 
     void get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_valid, bool &main4_valid, bool &main5_valid, double min_recharge);
 
-    double cal_damage(const attribute_data<double> &entry_value, double min_recharge);
+    double cal_damage(const attribute_data<double> &entry_value, double min_recharge) const;
 
+private:
     void get_react_value(double mastery, double &extra_rate, double &grow_rate, double &extra_damage) const;
 };
 
@@ -103,7 +112,7 @@ public:
     attribute_data<int> entry_num;
     double total_damage;
 
-    explicit Deployment(const vector<Single_Attack *> &attack_list_);
+    Deployment(Combination *self_, Team_Config *team_config_);
 
     ~Deployment();
 

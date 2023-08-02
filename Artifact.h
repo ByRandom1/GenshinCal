@@ -7,8 +7,6 @@
 
 #include "Basic_Elements.h"
 
-class Team_Config;
-
 class Single_Attack;
 
 class Config_File;
@@ -24,21 +22,19 @@ public:
 
     string get_name() const;
 
-    string get_english_name() const;
+    virtual attribute_data<int> get_useful_attribute(const Single_Attack *single_attack);
 
-    virtual attribute_data<int> get_useful_attribute(const Single_Attack *attack_config);
+    virtual attribute_data<double> get_extra(const Single_Attack *single_attack);
 
-    virtual attribute_data<double> get_extra(const Single_Attack *attack_config);
+    virtual attribute_data<double> get_team(const Single_Attack *other_single_attack);
 
-    virtual attribute_data<double> get_team(const Single_Attack *other_attack_config);
+    virtual void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy);
 
-    virtual void get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy);
+    virtual attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel);
 
-    virtual attribute_data<double> get_convert(const Single_Attack *attack_config, attribute_data<double> panel);
+    virtual double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel);
 
-    virtual double get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel);
-
-    virtual double get_react_bonus(const Single_Attack *attack_config, string react_type);
+    virtual double get_react_bonus(const Single_Attack *single_attack, string react_type);
 
     friend void generate_gcsim_script(Config_File *config);
 };

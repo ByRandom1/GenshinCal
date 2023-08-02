@@ -25,9 +25,6 @@ Weapon::Weapon(string name_,
 string Weapon::get_name()
 { return name; }
 
-string Weapon::get_english_name()
-{ return english_name; }
-
 string Weapon::get_weapon_type()
 { return weapon_type; }
 
@@ -45,23 +42,23 @@ attribute_data<double> Weapon::get_break(const string &ele_type)
     else return break_value;
 }
 
-attribute_data<int> Weapon::get_useful_attribute(const Single_Attack *attack_config)
+attribute_data<int> Weapon::get_useful_attribute(const Single_Attack *single_attack)
 { return {}; }
 
-attribute_data<double> Weapon::get_extra(const Single_Attack *attack_config)
+attribute_data<double> Weapon::get_extra(const Single_Attack *single_attack)
 { return {}; }
 
-attribute_data<double> Weapon::get_team(const Single_Attack *other_attack_config)
+attribute_data<double> Weapon::get_team(const Single_Attack *other_single_attack)
 { return {}; }
 
-void Weapon::get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy)
+void Weapon::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
 {}
 
-attribute_data<double> Weapon::get_convert(const Single_Attack *attack_config, attribute_data<double> panel)
+attribute_data<double> Weapon::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 { return {}; }
 
-double Weapon::get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel)
+double Weapon::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
 { return 0; }
 
-double Weapon::get_react_bonus(const Single_Attack *attack_config, string react_type)
+double Weapon::get_react_bonus(const Single_Attack *single_attack, string react_type)
 { return 0; }

@@ -23,15 +23,42 @@ Combination::Combination(Character *c_point_,
     a_main5 = std::move(a_main5_);
 }
 
+Attack_Config::Attack_Config(Character *c_point_,
+                             string attack_way_,
+                             string release_or_hit_,
+                             int rate_pos_,
+                             bool background_,
+                             string react_type_,
+                             double attack_time_)
+{
+    c_point = c_point_;
+    attack_way = std::move(attack_way_);
+    release_or_hit = std::move(release_or_hit_);
+    rate_pos = rate_pos_;
+    background = background_;
+    react_type = std::move(react_type_);
+    attack_time = attack_time_;
+}
+
+bool Attack_Config::operator<(const Attack_Config &other) const
+{
+    return this->attack_time > other.attack_time;
+}
+
 Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
+                         int E_energy_num1, int E_energy_num2, int E_energy_num3, int E_energy_num4,
                          string ele_attach_type_,
-                         vector<Single_Attack *> rotation_,
+                         vector<Attack_Config *> rotation_,
                          double rotation_time_)
 {
     team[0] = c1;
     team[1] = c2;
     team[2] = c3;
     team[3] = c4;
+    E_energy_num[0] = E_energy_num1;
+    E_energy_num[1] = E_energy_num2;
+    E_energy_num[2] = E_energy_num3;
+    E_energy_num[3] = E_energy_num4;
     ele_attach_type = std::move(ele_attach_type_);
     rotation = std::move(rotation_);
     rotation_time = rotation_time_;
@@ -48,28 +75,13 @@ Team_Config::~Team_Config()
 
 Single_Attack::Single_Attack(Combination *self_,
                              Team_Config *team_config_,
-                             string attack_way_,
-                             string release_or_hit_,
-                             int rate_pos_,
-                             bool background_,
-                             string react_type_,
-                             double attack_time_)
+                             Attack_Config *attack_config_)
 {
     self = self_;
     team_config = team_config_;
-    attack_way = std::move(attack_way_);
-    release_or_hit = std::move(release_or_hit_);
-    rate_pos = rate_pos_;
-    background = background_;
-    react_type = std::move(react_type_);
-    attack_time = attack_time_;
+    attack_config = attack_config_;
     base_life = base_atk = base_def = 0;
     base_skillrate = 0;
-}
-
-bool Single_Attack::operator<(const Single_Attack &other) const
-{
-    return this->attack_time > other.attack_time;
 }
 
 bool judge_useful(const attribute_data<int> &useful, attribute_data<double> value)
@@ -84,14 +96,14 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
 {
     //modify useful
     useful = self->c_point->get_useful_attribute(this) + self->w_point->get_useful_attribute(this) + self->suit1->get_useful_attribute(this);//artifact only 4 piece
-    if (!react_type.empty() && !("no_add_damage" <= react_type)) useful.data["元素精通"] += 1;
+    if (!attack_config->react_type.empty() && !("no_add_damage" <= attack_config->react_type)) useful.data["元素精通"] += 1;
     if (min_recharge > 1.0) useful.data["元素充能效率"] += 1;
 
     //get data
     base_life = self->c_point->get_life();
     base_atk = self->c_point->get_atk() + self->w_point->get_atk();
     base_def = self->c_point->get_def();
-    base_skillrate = self->c_point->get_rate(attack_way, rate_pos);
+    base_skillrate = self->c_point->get_rate(attack_config->attack_way, attack_config->rate_pos);
     percentage = attribute_data(1.0, 1.0, 1.0, 0.0, 1.0, 0.05, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                  + self->c_point->get_break() + self->c_point->get_extra(this)
                  + self->w_point->get_break(self->c_point->get_ele_type(this)) + self->w_point->get_extra(this);
@@ -139,9 +151,10 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
     for (auto &i: team_config->team)
         if (i->c_point != self->c_point)
             percentage = percentage + i->c_point->get_team(this) + i->w_point->get_team(this) + i->suit1->get_team(this);
+    //TODO:元素共鸣
 }
 
-double Single_Attack::cal_damage(const attribute_data<double> &entry_value, double min_recharge)
+double Single_Attack::cal_damage(const attribute_data<double> &entry_value, double min_recharge) const
 {
     attribute_data<double> panel = percentage + entry_value + attribute_data("暴击率", 0.08) + attribute_data("暴击伤害", 0.15);
     //get converted
@@ -156,7 +169,7 @@ double Single_Attack::cal_damage(const attribute_data<double> &entry_value, doub
     get_react_value(panel.data["元素精通"], extra_rate, grow_rate, extra_damage);
     //get resist ratio
     double resistence_ratio;
-    if ("超导" <= react_type && self->c_point->get_ele_type(this) == "物理") panel.data["抗性削弱"] += 0.4;//TODO:time_constrain
+    if ("超导" <= attack_config->react_type && self->c_point->get_ele_type(this) == "物理") panel.data["抗性削弱"] += 0.4;//TODO:time_constrain
     if (0.1 - panel.data["抗性削弱"] >= 0.75) resistence_ratio = 1 / (4 * (0.1 - panel.data["抗性削弱"]) + 1);
     else if (0.1 - panel.data["抗性削弱"] < 0) resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]) / 2;
     else resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]);
@@ -175,19 +188,19 @@ void Single_Attack::get_react_value(double mastery, double &extra_rate, double &
 {
     //扩散（风+水火雷冰），结晶（岩+水火雷冰），绽放（草水+火雷），激化（草雷），燃烧（草火），蒸发（水火），融化（火冰），冻结（水冰），感电（雷水），超载（雷火），超导（雷冰）
     //默认剧变抗性固定为0.1
-    if ("no_add_damage" <= react_type) return;
-    if ("扩散" <= react_type)
+    if ("no_add_damage" <= attack_config->react_type) return;
+    if ("扩散" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "扩散") + self->w_point->get_react_bonus(this, "扩散") + self->suit1->get_react_bonus(this, "扩散");
         extra_damage += 1.2 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);
         //1.2 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
         //元素伤，吃各元素抗
     }
-    if ("结晶" <= react_type)
+    if ("结晶" <= attack_config->react_type)
     {
 
     }
-    if ("绽放" <= react_type)
+    if ("绽放" <= attack_config->react_type)
     {
         //TODO:绽放
 //        if ("烈绽放" <= react_type)
@@ -212,52 +225,52 @@ void Single_Attack::get_react_value(double mastery, double &extra_rate, double &
 //            //草伤，吃草抗
 //        }
     }
-    if ("激化" <= react_type)
+    if ("激化" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "激化") + self->w_point->get_react_bonus(this, "激化") + self->suit1->get_react_bonus(this, "激化");
         if (self->c_point->get_ele_type(this) == "草") extra_rate += 1447.0 * 1.25 * (1.0 + (5.0 * mastery) / (mastery + 1200.0) + extra_damplus);
         else if (self->c_point->get_ele_type(this) == "雷") extra_rate += 1447.0 * 1.15 * (1.0 + (5.0 * mastery) / (mastery + 1200.0) + extra_damplus);
     }
-    if ("燃烧" <= react_type)
+    if ("燃烧" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "燃烧") + self->w_point->get_react_bonus(this, "燃烧") + self->suit1->get_react_bonus(this, "燃烧");
         extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
         //0.5 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
         //火伤，吃火抗，8段伤害
     }
-    if ("蒸发" <= react_type)
+    if ("蒸发" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "蒸发") + self->w_point->get_react_bonus(this, "蒸发") + self->suit1->get_react_bonus(this, "蒸发");
         if (self->c_point->get_ele_type(this) == "火") grow_rate = 1.5 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
         else if (self->c_point->get_ele_type(this) == "水") grow_rate = 2.0 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
     }
-    if ("融化" <= react_type)
+    if ("融化" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "融化") + self->w_point->get_react_bonus(this, "融化") + self->suit1->get_react_bonus(this, "融化");
         if (self->c_point->get_ele_type(this) == "火") grow_rate = 2.0 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
         else if (self->c_point->get_ele_type(this) == "冰") grow_rate = 1.5 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
     }
-    if ("冻结" <= react_type)
+    if ("冻结" <= attack_config->react_type)
     {
 
     }
     //碎冰 //3.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
     //物理伤，吃物理抗
-    if ("感电" <= react_type)
+    if ("感电" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "感电") + self->w_point->get_react_bonus(this, "感电") + self->suit1->get_react_bonus(this, "感电");
         extra_damage += 2.4 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);
         //2.4 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
         //雷伤，吃雷抗
     }
-    if ("超载" <= react_type)
+    if ("超载" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "超载") + self->w_point->get_react_bonus(this, "超载") + self->suit1->get_react_bonus(this, "超载");
         extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);
         //4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
         //火伤，吃火抗
     }
-    if ("超导" <= react_type)
+    if ("超导" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "超导") + self->w_point->get_react_bonus(this, "超导") + self->suit1->get_react_bonus(this, "超导");
         extra_damage += 1.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);
@@ -266,9 +279,11 @@ void Single_Attack::get_react_value(double mastery, double &extra_rate, double &
     }
 }
 
-Deployment::Deployment(const vector<Single_Attack *> &attack_list_)
+Deployment::Deployment(Combination *self_, Team_Config *team_config_)
 {
-    attack_list = attack_list_;
+    for (auto i: team_config_->rotation)
+        if (i->c_point == self_->c_point && "hit" <= i->release_or_hit)
+            attack_list.push_back(new Single_Attack(self_, team_config_, i));
     min_recharge = 0;
     total_damage = 0;
 }
@@ -288,19 +303,19 @@ int Deployment::get_all_data()
 {
     //cal recharge
     for (auto i: attack_list[0]->team_config->rotation)
-        if (i->self->c_point == attack_list[0]->self->c_point && i->attack_way == "Q" && "release" <= i->release_or_hit)
+        if (i->c_point == attack_list[0]->self->c_point && i->attack_way == "Q")
         {
             double Q_energy_modify = 0.0;
             double energy = 10.0;
-            attack_list[0]->self->c_point->get_recharge_energy(attack_list[0]->team_config, Q_energy_modify, energy);
-            attack_list[0]->self->w_point->get_recharge_energy(attack_list[0]->team_config, Q_energy_modify, energy);
-            attack_list[0]->self->suit1->get_recharge_energy(attack_list[0]->team_config, Q_energy_modify, energy);
+            attack_list[0]->self->c_point->get_recharge_energy(attack_list[0], Q_energy_modify, energy);
+            attack_list[0]->self->w_point->get_recharge_energy(attack_list[0], Q_energy_modify, energy);
+            attack_list[0]->self->suit1->get_recharge_energy(attack_list[0], Q_energy_modify, energy);
             for (auto &j: attack_list[0]->team_config->team)
                 if (j->c_point != attack_list[0]->self->c_point)
                 {
-                    j->c_point->get_recharge_energy(attack_list[0]->team_config, Q_energy_modify, energy);
-                    j->w_point->get_recharge_energy(attack_list[0]->team_config, Q_energy_modify, energy);
-                    j->suit1->get_recharge_energy(attack_list[0]->team_config, Q_energy_modify, energy);
+                    j->c_point->get_recharge_energy(attack_list[0], Q_energy_modify, energy);
+                    j->w_point->get_recharge_energy(attack_list[0], Q_energy_modify, energy);
+                    j->suit1->get_recharge_energy(attack_list[0], Q_energy_modify, energy);
                 }
             min_recharge = max(Q_energy_modify / energy, 0.0);
             break;

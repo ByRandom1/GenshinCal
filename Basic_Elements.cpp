@@ -10,7 +10,7 @@ bool operator<=(const string &inf, const string &target)
 }
 
 //front + constrain > back
-bool check_time_constrain(double front, double back, double rotation_time, double constrain)
+bool check_time_constrain(double front, double back, double constrain, double rotation_time)
 {
     //单个循环内，front在back之前，这一轮back吃这一轮front的加成
     if (back > front) return (front + constrain > back);

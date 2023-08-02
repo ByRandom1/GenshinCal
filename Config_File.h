@@ -28,7 +28,6 @@ public:
     vector<string> attack_script;
 
     Team_Config *team_config;
-    vector<Single_Attack *> attack_list[4];
 
     Config_File(string team_name_, vector<string> file);
 

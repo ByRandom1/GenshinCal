@@ -80,9 +80,6 @@ Character::Character(string name_,
 string Character::get_name()
 { return name; }
 
-string Character::get_english_name()
-{ return english_name; }
-
 string Character::get_weapon_type()
 { return weapon_type; }
 
@@ -132,40 +129,60 @@ double Character::get_rate(const string &attack_way, int pos)
 attribute_data<double> Character::get_break()
 { return break_value; }
 
-string Character::get_ele_type(const Single_Attack *attack_config)
+string Character::get_ele_type(const Single_Attack *single_attack)
 {
-    if (attack_config->attack_way == "平A") return normal_A_ele_type;
-    else if (attack_config->attack_way == "重A") return heavy_A_ele_type;
-    else if (attack_config->attack_way == "下落A") return down_A_ele_type;
-    else if (attack_config->attack_way == "E") return E_ele_type;
-    else if (attack_config->attack_way == "Q") return Q_ele_type;
+    if (single_attack->attack_config->attack_way == "平A") return normal_A_ele_type;
+    else if (single_attack->attack_config->attack_way == "重A") return heavy_A_ele_type;
+    else if (single_attack->attack_config->attack_way == "下落A") return down_A_ele_type;
+    else if (single_attack->attack_config->attack_way == "E") return E_ele_type;
+    else if (single_attack->attack_config->attack_way == "Q") return Q_ele_type;
     else return ele_type;
 }
 
-attribute_data<int> Character::get_useful_attribute(const Single_Attack *attack_config)
+attribute_data<int> Character::get_useful_attribute(const Single_Attack *single_attack)
 {
-    if (attack_config->attack_way == "平A" || attack_config->attack_way == "重A" || attack_config->attack_way == "下落A") return A_useful_attributes;
-    else if (attack_config->attack_way == "E") return E_useful_attributes;
-    else if (attack_config->attack_way == "Q") return Q_useful_attributes;
+    if (single_attack->attack_config->attack_way == "平A" || single_attack->attack_config->attack_way == "重A" || single_attack->attack_config->attack_way == "下落A") return A_useful_attributes;
+    else if (single_attack->attack_config->attack_way == "E") return E_useful_attributes;
+    else if (single_attack->attack_config->attack_way == "Q") return Q_useful_attributes;
     else return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 }
 
-attribute_data<double> Character::get_extra(const Single_Attack *attack_config)
+attribute_data<double> Character::get_extra(const Single_Attack *single_attack)
 { return {}; }
 
-attribute_data<double> Character::get_team(const Single_Attack *attack_config)
+attribute_data<double> Character::get_team(const Single_Attack *single_attack)
 { return {}; }
 
-void Character::get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy)
-{}
+void Character::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+{
+    if (single_attack->self->c_point == this)
+    {
+        Q_energy_modify = Q_energy;
+        for (int i = 0; i < 4; ++i)
+            if (single_attack->team_config->team[i]->c_point == this)
+            {
+                energy += single_attack->team_config->E_energy_num[i] * E_energy * 3 * 1;
+                break;
+            }
+    }
+    else
+    {
+        for (int i = 0; i < 4; ++i)
+            if (single_attack->team_config->team[i]->c_point == this)
+            {
+                energy += single_attack->team_config->E_energy_num[i] * E_energy * (single_attack->self->c_point->get_ele_type(single_attack) == ele_type ? 3 : 1) * 0.6;
+                break;
+            }
+    }
+}
 
-attribute_data<double> Character::get_convert(const Single_Attack *attack_config, attribute_data<double> panel)
+attribute_data<double> Character::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 { return {}; }
 
-double Character::get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel)
+double Character::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
 { return 0; }
 
-double Character::get_react_bonus(const Single_Attack *attack_config, string react_type)
+double Character::get_react_bonus(const Single_Attack *single_attack, string react_type)
 { return 0; }
 
 Hutao::Hutao(int A_level, int E_level, int Q_level, int constellation) : Character("胡桃", "hutao", "火", "长柄武器", 15552, 107, 876, attribute_data("暴击伤害", 0.384),
@@ -176,56 +193,119 @@ Hutao::Hutao(int A_level, int E_level, int Q_level, int constellation) : Charact
                                                                                    constellation)
 {}
 
-string Hutao::get_ele_type(const Single_Attack *attack_config)
+vector<pair<double, double>> Hutao::get_E_time(const Single_Attack *single_attack)
 {
-    string result;
-    //skill:E rel 11s
-
+    vector<pair<double, double>> result;
+    double E_release_time = -1;
+    int i = 0;
+    while (i < single_attack->team_config->rotation.size())
+    {
+        if (E_release_time == -1)
+        {
+            //get E release time
+            if (single_attack->team_config->rotation[i]->c_point == this &&
+                single_attack->team_config->rotation[i]->attack_way == "E" &&
+                "release" <= single_attack->team_config->rotation[i]->release_or_hit)
+                E_release_time = single_attack->team_config->rotation[i]->attack_time;
+            else
+                i++;
+        }
+        else
+        {
+            //judge continuous attack
+            while (i++ < single_attack->team_config->rotation.size())
+            {
+                //switch or time up
+                if (i > single_attack->team_config->rotation.size() ||
+                    single_attack->team_config->rotation[i]->c_point != this ||
+                    single_attack->team_config->rotation[i]->attack_time > E_release_time + 11)
+                {
+                    result.emplace_back(E_release_time, single_attack->team_config->rotation[i - 1]->attack_time);
+                    E_release_time = -1;
+                    break;
+                }
+            }
+        }
+    }
     return result;
 }
 
-attribute_data<int> Hutao::get_useful_attribute(const Single_Attack *attack_config)
+string Hutao::get_ele_type(const Single_Attack *single_attack)
 {
-    attribute_data<int> result;
-    //skill:E rel 11s
+    if (single_attack == nullptr) return ele_type;
 
-    return result;
-}
-
-attribute_data<double> Hutao::get_extra(const Single_Attack *attack_config)
-{
-    attribute_data<double> result;
-    //talent:半血、火伤
-
-    return result;
-}
-
-attribute_data<double> Hutao::get_team(const Single_Attack *other_attack_config)
-{
-    attribute_data<double> result;
-    //talent:E结束后（11s）队友暴击率提升12% 8s
-
-    return result;
-}
-
-void Hutao::get_recharge_energy(const Team_Config *team_config, double &Q_energy_modify, double &energy)
-{
-    //E下A，2.5/5s
-
-}
-
-attribute_data<double> Hutao::get_convert(const Single_Attack *attack_config, attribute_data<double> panel)
-{
-    attribute_data<double> result;
+    string result = Character::get_ele_type(single_attack);
     //skill:E
-
+    auto E_time = get_E_time(single_attack);
+    for (auto &i: E_time)
+        if (i.first <= single_attack->attack_config->attack_time &&
+            single_attack->attack_config->attack_time <= i.second)
+        {
+            result = "火";
+            break;
+        }
     return result;
 }
 
-double Hutao::get_extra_rate(const Single_Attack *attack_config, attribute_data<double> panel)
+attribute_data<int> Hutao::get_useful_attribute(const Single_Attack *single_attack)
 {
-    double result = 0;
-    //constellation 2:E +10%life
+    attribute_data<int> result = Character::get_useful_attribute(single_attack);
+    //skill:E
+    auto E_time = get_E_time(single_attack);
+    for (auto &i: E_time)
+        if (i.first <= single_attack->attack_config->attack_time &&
+            single_attack->attack_config->attack_time <= i.second)
+        {
+            result.data["生命值"] = 1;
+            break;
+        }
+    return result;
+}
 
+attribute_data<double> Hutao::get_extra(const Single_Attack *single_attack)
+{
+    attribute_data<double> result = Character::get_extra(single_attack);
+    //talent:半血、火伤
+    bool heal_exist = false;//TODO:add arg
+    if (!heal_exist && get_ele_type(single_attack) == "火")
+        result.data["伤害加成"] += 0.33;
+    return result;
+}
+
+attribute_data<double> Hutao::get_team(const Single_Attack *other_single_attack)
+{
+    attribute_data<double> result = Character::get_team(other_single_attack);
+    //talent:E结束，8s，队友暴击率+12%
+    auto E_time = get_E_time(other_single_attack);
+    for (auto &i: E_time)
+        if (check_time_constrain(i.second, other_single_attack->attack_config->attack_time, 8, other_single_attack->team_config->rotation_time))
+        {
+            result.data["暴击率"] += 0.12;
+            break;
+        }
+    return result;
+}
+
+attribute_data<double> Hutao::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
+{
+    attribute_data<double> result = Character::get_convert(single_attack, panel);
+    //skill:E
+    auto E_time = get_E_time(single_attack);
+    for (auto &i: E_time)
+        if (i.first <= single_attack->attack_config->attack_time &&
+            single_attack->attack_config->attack_time <= i.second)
+        {
+            result.data["攻击力"] += min(panel.data["生命值"] * 0.0626 * life / atk, 4.0);
+            break;
+        }
+    return result;
+}
+
+double Hutao::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
+{
+    double result = Character::get_extra_rate(single_attack, panel);
+    //constellation 2:E +10%life
+    if (constellation >= 2 && single_attack->attack_config->attack_way == "E")
+        result += 0.1 * panel.data["生命值"] * life;
     return result;
 }
