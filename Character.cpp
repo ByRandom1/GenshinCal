@@ -225,10 +225,10 @@ vector<pair<double, double>> Hutao::get_E_time(const Single_Attack *single_attac
                 E_release_time = -1;
             }
                 //switch
-            else if (!single_attack->team_config->rotation[i + 1]->background &&
+            else if ("switch" <= single_attack->team_config->rotation[i + 1]->release_or_hit &&
                      single_attack->team_config->rotation[i + 1]->c_point != this)
             {
-                result.emplace_back(E_release_time, single_attack->team_config->rotation[i]->attack_time);
+                result.emplace_back(E_release_time, single_attack->team_config->rotation[i + 1]->attack_time);
                 E_release_time = -1;
             }
         }
@@ -262,7 +262,7 @@ attribute_data<int> Hutao::get_useful_attribute(const Single_Attack *single_atta
         if (i.first <= single_attack->attack_config->attack_time &&
             single_attack->attack_config->attack_time <= i.second)
         {
-            result = result + attribute_data("生命值", 1);
+            result = result + attribute_data("生命值", 1) + attribute_data("攻击力", -1);
             break;
         }
     return result;
@@ -325,100 +325,100 @@ Alhaitham::Alhaitham(int A_level, int E_level, int Q_level, int constellation) :
                                                                                            constellation)
 {}
 
+int get_mirror_num(const vector<pair<int, double>> &result, double time)
+{
+    int total_mirror = 0;
+    for (auto &i: result)
+        if (i.second < time)
+            total_mirror += i.first;
+    return total_mirror;
+}
+
 vector<pair<int, double>> Alhaitham::get_mirror_time(const Single_Attack *single_attack)
 {
     vector<pair<int, double>> result;
-    bool front = false;
-    double A_time = -12;
+    double last_A_generate = -12;
+    double last_del = -1;
     pair<int, double> Q_to_deal = make_pair(-1, -1);
     for (auto i: single_attack->team_config->rotation)
     {
-        //switch
-        if (!front && !i->background && i->c_point == this) front = true;
-        if (front && !i->background && i->c_point != this)
+        //退场
+        if ("switch" <= i->release_or_hit && i->c_point != this)
         {
-            front = false;
-            int total_mirror = 0;
-            for (auto &j: result)
-                if (j.second < Q_to_deal.second)
-                    total_mirror += j.first;
+            int total_mirror = get_mirror_num(result, i->attack_time);
             if (total_mirror != 0) result.emplace_back(-total_mirror, i->attack_time);
         }
-        //skill:Q return
-        if (Q_to_deal.second != -1 && i->attack_time > Q_to_deal.second)
+        //时间流逝
+        if (i->attack_time >= last_del + 4 && get_mirror_num(result, last_del + 4) > 0)
         {
+            result.emplace_back(-1, last_del + 4);
+            last_del += 4;
+        }
+        //Q返还
+        if (Q_to_deal.second != -1 && i->attack_time >= Q_to_deal.second)
+        {
+            bool front = false;
+            for (auto j: single_attack->team_config->rotation)
+            {
+                if (j->attack_time >= Q_to_deal.second) break;
+                if ("switch" <= j->release_or_hit && j->c_point != this) front = false;
+                if ("switch" <= j->release_or_hit && j->c_point == this) front = true;
+            }
             if (front)
             {
-                int total_mirror = 0;
-                for (auto &j: result)
-                    if (j.second < Q_to_deal.second)
-                        total_mirror += j.first;
+                int total_mirror = get_mirror_num(result, Q_to_deal.second);
                 result.emplace_back(Q_to_deal.first, Q_to_deal.second);
-                int discard = max(total_mirror + Q_to_deal.first - 3, 0);
-                int keep = min(3 - total_mirror, Q_to_deal.first);
-                if (discard != 0) result.emplace_back(-discard, Q_to_deal.second);
-                for (int j = 0; j < keep; ++j)
-                    result.emplace_back(-1, Q_to_deal.second + 4 * (j + 1));
+                if (total_mirror + Q_to_deal.first - 3 > 0)
+                    result.emplace_back(-(total_mirror + Q_to_deal.first - 3), Q_to_deal.second);
+                if (total_mirror == 0) last_del = Q_to_deal.second;
             }
             Q_to_deal.first = -1;
             Q_to_deal.second = -1;
         }
-        //skill:Q
-        if (front && i->c_point == this && i->attack_way == "Q" && "release" <= i->release_or_hit)
+        //E
+        if (i->c_point == this && i->attack_way == "E" && "release" <= i->release_or_hit)
         {
-            int total_mirror = 0;
-            for (auto &j: result)
-                if (j.second < i->attack_time)
-                    total_mirror += j.first;
-            if (total_mirror != 0) result.emplace_back(-total_mirror, i->attack_time);
-            if (total_mirror != 3)
-            {
-                Q_to_deal.first = 3 - total_mirror;
-                Q_to_deal.second = i->attack_time + 2;
-            }
-        }
-        //talent 1
-        if (front && i->c_point == this && (i->attack_way == "重A" || i->attack_way == "下落A") &&
-            "hit" <= i->release_or_hit && i->attack_time >= A_time + 12)
-        {
-            int total_mirror = 0;
-            for (auto &j: result)
-                if (j.second < i->attack_time)
-                    total_mirror += j.first;
+            int total_mirror = get_mirror_num(result, i->attack_time);
             if (total_mirror == 3)
             {
                 result.emplace_back(1, i->attack_time);
                 result.emplace_back(-1, i->attack_time);
-            }
-            else
-            {
-                result.emplace_back(1, i->attack_time);
-                result.emplace_back(-1, i->attack_time + 4);
-            }
-            A_time = i->attack_time;
-        }
-        //skill:E
-        if (front && i->c_point == this && i->attack_way == "E" && "release" <= i->release_or_hit)
-        {
-            int total_mirror = 0;
-            for (auto &j: result)
-                if (j.second < i->attack_time)
-                    total_mirror += j.first;
-            if (total_mirror == 3)
-            {
-                result.emplace_back(1, i->attack_time);
-                result.emplace_back(-1, i->attack_time);
-            }
-            else if (total_mirror > 0)
-            {
-                result.emplace_back(1, i->attack_time);
-                result.emplace_back(-1, i->attack_time + 4);
             }
             else if (total_mirror == 0)
             {
                 result.emplace_back(2, i->attack_time);
-                result.emplace_back(-1, i->attack_time + 4);
-                result.emplace_back(-1, i->attack_time + 8);
+                last_del = i->attack_time;
+            }
+            else result.emplace_back(1, i->attack_time);
+        }
+        //talent 1
+        if (i->c_point == this && (i->attack_way == "重A" || i->attack_way == "下落A") &&
+            "hit" <= i->release_or_hit && i->attack_time >= last_A_generate + 12)
+        {
+            int total_mirror = get_mirror_num(result, i->attack_time);
+            if (total_mirror == 3)
+            {
+                result.emplace_back(1, i->attack_time);
+                result.emplace_back(-1, i->attack_time);
+            }
+            else if (total_mirror == 0)
+            {
+                result.emplace_back(1, i->attack_time);
+                last_del = i->attack_time;
+            }
+            else result.emplace_back(1, i->attack_time);
+            last_A_generate = i->attack_time;
+        }
+        //Q
+        if (i->c_point == this && i->attack_way == "Q" && "release" <= i->release_or_hit)
+        {
+            int total_mirror = get_mirror_num(result, i->attack_time);
+            if (total_mirror != 0) result.emplace_back(-total_mirror, i->attack_time);
+            if (total_mirror != 3)
+            {
+                if (constellation >= 6) Q_to_deal.first = 3;
+                else Q_to_deal.first = 3 - total_mirror;
+                Q_to_deal.second = i->attack_time + 2;
             }
         }
     }
@@ -431,12 +431,7 @@ string Alhaitham::get_ele_type(const Single_Attack *single_attack)
 
     string result = Character::get_ele_type(single_attack);
     //state下
-    auto mirror_time = get_mirror_time(single_attack);
-    int total_mirror = 0;
-    for (auto &i: mirror_time)
-        if (i.second < single_attack->attack_config->attack_time)
-            total_mirror += i.first;
-    if (total_mirror > 0) result = "草";
+    if (get_mirror_num(get_mirror_time(single_attack), single_attack->attack_config->attack_time) > 0) result = "草";
     return result;
 }
 
@@ -456,7 +451,47 @@ attribute_data<double> Alhaitham::get_extra(const Single_Attack *single_attack)
     //constellation 4
     if (constellation >= 4)
     {
-        
+        auto mirror_time = get_mirror_time(single_attack);
+        for (auto i: single_attack->team_config->rotation)
+            if (i->c_point == this && i->attack_way == "Q" && "release" <= i->release_or_hit)
+                for (auto j: mirror_time)
+                    if (j.second == i->attack_time + 2)
+                        if (get_ele_type(single_attack) == "草" && check_time_constrain(i->attack_time + 2, single_attack->attack_config->attack_time, 15, single_attack->team_config->rotation_time))
+                        {
+                            result = result + attribute_data("伤害加成", 0.1 * j.first);
+                            goto Alhaitham_END1;
+                        }
+        Alhaitham_END1:;
+    }
+    //constellation 6
+    if (constellation >= 6)
+    {
+        auto mirror_time = get_mirror_time(single_attack);
+        vector<double> time_point;
+        for (auto i: mirror_time)
+            for (auto j: mirror_time)
+                if (i.first > 0 && j.first < 0 && i.second == j.second)
+                    time_point.push_back(i.second);
+        sort(time_point.begin(), time_point.end());
+        vector<pair<double, double>> time_range;
+        double start = time_point[0];
+        double end = time_point[0] + 6;
+        for (int i = 1; i < time_point.size(); ++i)
+        {
+            if (start < time_point[i] && time_point[i] < end) end += 6;
+            else
+            {
+                time_range.emplace_back(start, end);
+                start = time_point[i];
+                end = time_point[i] + 6;
+            }
+        }
+        for (auto i: time_range)
+            if (i.first <= single_attack->attack_config->attack_time && single_attack->attack_config->attack_time <= i.second)
+            {
+                result = result + attribute_data("暴击率", 0.1) + attribute_data("暴击伤害", 0.7);
+                break;
+            }
     }
     return result;
 }
@@ -464,7 +499,21 @@ attribute_data<double> Alhaitham::get_extra(const Single_Attack *single_attack)
 attribute_data<double> Alhaitham::get_team(const Single_Attack *other_single_attack)
 {
     attribute_data<double> result = Character::get_team(other_single_attack);
-
+    //constellation 4
+    if (constellation >= 4)
+    {
+        auto mirror_time = get_mirror_time(other_single_attack);
+        for (auto i: other_single_attack->team_config->rotation)
+            if (i->c_point == this && i->attack_way == "Q" && "release" <= i->release_or_hit)
+                for (auto j: mirror_time)
+                    if (j.second == i->attack_time)
+                        if (check_time_constrain(i->attack_time, other_single_attack->attack_config->attack_time, 15, other_single_attack->team_config->rotation_time))
+                        {
+                            result = result + attribute_data("元素精通", 30.0 * (-j.first));
+                            goto Alhaitham_END2;
+                        }
+        Alhaitham_END2:;
+    }
     return result;
 }
 

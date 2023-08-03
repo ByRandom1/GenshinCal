@@ -115,7 +115,7 @@ public:
 
 class Hutao : public Character
 {
-    //4、6命不建构
+    //4、6命不建构：条件难触发
 public:
     Hutao(int A_level, int E_level, int Q_level, int constellation);
 
@@ -137,6 +137,7 @@ private:
 
 class Alhaitham : public Character
 {
+    //1命不建构：不需要
 public:
     Alhaitham(int A_level, int E_level, int Q_level, int constellation);
 

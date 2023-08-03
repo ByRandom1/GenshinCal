@@ -239,6 +239,7 @@ Character *find_character_by_name(const string &name)
 void init_Character_list()
 {
     Character_list.push_back(new Hutao(10, 10, 10, 1));
+    Character_list.push_back(new Alhaitham(10, 10, 10, 0));
 }
 
 vector<Weapon *> Weapon_list;
