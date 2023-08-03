@@ -126,8 +126,16 @@ double Character::get_rate(const string &attack_way, int pos)
     return 0;
 }
 
-attribute_data<double> Character::get_break()
-{ return break_value; }
+attribute_data<double> Character::get_break(const string &ele_type_)
+{
+    if (ele_type_ != ele_type)
+    {
+        attribute_data<double> result = break_value;
+        result.data["伤害加成"] = 0.0;
+        return result;
+    }
+    else return break_value;
+}
 
 string Character::get_ele_type(const Single_Attack *single_attack)
 {
@@ -197,33 +205,31 @@ vector<pair<double, double>> Hutao::get_E_time(const Single_Attack *single_attac
 {
     vector<pair<double, double>> result;
     double E_release_time = -1;
-    int i = 0;
-    while (i < single_attack->team_config->rotation.size())
+    for (int i = 0; i < single_attack->team_config->rotation.size(); ++i)
     {
-        if (E_release_time == -1)
+        if (E_release_time == -1 &&
+            single_attack->team_config->rotation[i]->c_point == this &&
+            single_attack->team_config->rotation[i]->attack_way == "E" &&
+            "release" <= single_attack->team_config->rotation[i]->release_or_hit)
         {
-            //get E release time
-            if (single_attack->team_config->rotation[i]->c_point == this &&
-                single_attack->team_config->rotation[i]->attack_way == "E" &&
-                "release" <= single_attack->team_config->rotation[i]->release_or_hit)
-                E_release_time = single_attack->team_config->rotation[i]->attack_time;
-            else
-                i++;
+            E_release_time = single_attack->team_config->rotation[i]->attack_time;
+            i--;
         }
-        else
+        if (E_release_time != -1)
         {
-            //judge continuous attack
-            while (i++ < single_attack->team_config->rotation.size())
+            //time up
+            if (i + 1 > single_attack->team_config->rotation.size() ||
+                single_attack->team_config->rotation[i + 1]->attack_time > E_release_time + 11)
             {
-                //switch or time up
-                if (i > single_attack->team_config->rotation.size() ||
-                    single_attack->team_config->rotation[i]->c_point != this ||
-                    single_attack->team_config->rotation[i]->attack_time > E_release_time + 11)
-                {
-                    result.emplace_back(E_release_time, single_attack->team_config->rotation[i - 1]->attack_time);
-                    E_release_time = -1;
-                    break;
-                }
+                result.emplace_back(E_release_time, single_attack->team_config->rotation[i]->attack_time);
+                E_release_time = -1;
+            }
+                //switch
+            else if (!single_attack->team_config->rotation[i + 1]->background &&
+                     single_attack->team_config->rotation[i + 1]->c_point != this)
+            {
+                result.emplace_back(E_release_time, single_attack->team_config->rotation[i]->attack_time);
+                E_release_time = -1;
             }
         }
     }
@@ -256,7 +262,7 @@ attribute_data<int> Hutao::get_useful_attribute(const Single_Attack *single_atta
         if (i.first <= single_attack->attack_config->attack_time &&
             single_attack->attack_config->attack_time <= i.second)
         {
-            result.data["生命值"] = 1;
+            result = result + attribute_data("生命值", 1);
             break;
         }
     return result;
@@ -268,7 +274,7 @@ attribute_data<double> Hutao::get_extra(const Single_Attack *single_attack)
     //talent:半血、火伤
     bool heal_exist = false;//TODO:add arg
     if (!heal_exist && get_ele_type(single_attack) == "火")
-        result.data["伤害加成"] += 0.33;
+        result = result + attribute_data("伤害加成", 0.33);
     return result;
 }
 
@@ -280,7 +286,7 @@ attribute_data<double> Hutao::get_team(const Single_Attack *other_single_attack)
     for (auto &i: E_time)
         if (check_time_constrain(i.second, other_single_attack->attack_config->attack_time, 8, other_single_attack->team_config->rotation_time))
         {
-            result.data["暴击率"] += 0.12;
+            result = result + attribute_data("暴击率", 0.12);
             break;
         }
     return result;
@@ -295,7 +301,7 @@ attribute_data<double> Hutao::get_convert(const Single_Attack *single_attack, at
         if (i.first <= single_attack->attack_config->attack_time &&
             single_attack->attack_config->attack_time <= i.second)
         {
-            result.data["攻击力"] += min(panel.data["生命值"] * 0.0626 * life / atk, 4.0);
+            result = result + attribute_data("攻击力", min(panel.data["生命值"] * 0.0626 * life / atk, 4.0));
             break;
         }
     return result;
@@ -306,6 +312,241 @@ double Hutao::get_extra_rate(const Single_Attack *single_attack, attribute_data<
     double result = Character::get_extra_rate(single_attack, panel);
     //constellation 2:E +10%life
     if (constellation >= 2 && single_attack->attack_config->attack_way == "E")
-        result += 0.1 * panel.data["生命值"] * life;
+        result = result + 0.1 * panel.data["生命值"] * life;
     return result;
 }
+
+Alhaitham::Alhaitham(int A_level, int E_level, int Q_level, int constellation) : Character("艾尔海森", "alhaitham", "草", "单手剑", 13348, 313, 782, attribute_data("伤害加成", 0.288),
+                                                                                           A_level, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "物理", vector<double>{0.979, 1.003, 0.676, 0.676, 1.32, 1.658}, vector<double>{0.91, 0.932, 0.628, 0.628, 1.227, 1.541},
+                                                                                           "物理", vector<double>{1.092, 1.092}, vector<double>{1.015, 1.015}, "物理", vector<double>{3.16}, vector<double>{2.93},
+                                                                                           E_level, 1, false, attribute_data(0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0), "草", vector<double>{4.114, 1.482, 1.482 * 2, 1.482 * 3}, vector<double>{3.872, 1.344, 1.344 * 2, 1.344 * 3},
+                                                                                           vector<double>{3.485, 1.21, 1.21 * 2, 1.21 * 3}, vector<double>{3.291, 1.142, 1.142 * 2, 1.142 * 3},
+                                                                                           Q_level, 70, true, attribute_data(0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0), "草", vector<double>{2.584}, vector<double>{2.432}, vector<double>{2.189}, vector<double>{2.067},
+                                                                                           constellation)
+{}
+
+vector<pair<int, double>> Alhaitham::get_mirror_time(const Single_Attack *single_attack)
+{
+    vector<pair<int, double>> result;
+    bool front = false;
+    double A_time = -12;
+    pair<int, double> Q_to_deal = make_pair(-1, -1);
+    for (auto i: single_attack->team_config->rotation)
+    {
+        //switch
+        if (!front && !i->background && i->c_point == this) front = true;
+        if (front && !i->background && i->c_point != this)
+        {
+            front = false;
+            int total_mirror = 0;
+            for (auto &j: result)
+                if (j.second < Q_to_deal.second)
+                    total_mirror += j.first;
+            if (total_mirror != 0) result.emplace_back(-total_mirror, i->attack_time);
+        }
+        //skill:Q return
+        if (Q_to_deal.second != -1 && i->attack_time > Q_to_deal.second)
+        {
+            if (front)
+            {
+                int total_mirror = 0;
+                for (auto &j: result)
+                    if (j.second < Q_to_deal.second)
+                        total_mirror += j.first;
+                result.emplace_back(Q_to_deal.first, Q_to_deal.second);
+                int discard = max(total_mirror + Q_to_deal.first - 3, 0);
+                int keep = min(3 - total_mirror, Q_to_deal.first);
+                if (discard != 0) result.emplace_back(-discard, Q_to_deal.second);
+                for (int j = 0; j < keep; ++j)
+                    result.emplace_back(-1, Q_to_deal.second + 4 * (j + 1));
+            }
+            Q_to_deal.first = -1;
+            Q_to_deal.second = -1;
+        }
+        //skill:Q
+        if (front && i->c_point == this && i->attack_way == "Q" && "release" <= i->release_or_hit)
+        {
+            int total_mirror = 0;
+            for (auto &j: result)
+                if (j.second < i->attack_time)
+                    total_mirror += j.first;
+            if (total_mirror != 0) result.emplace_back(-total_mirror, i->attack_time);
+            if (total_mirror != 3)
+            {
+                Q_to_deal.first = 3 - total_mirror;
+                Q_to_deal.second = i->attack_time + 2;
+            }
+        }
+        //talent 1
+        if (front && i->c_point == this && (i->attack_way == "重A" || i->attack_way == "下落A") &&
+            "hit" <= i->release_or_hit && i->attack_time >= A_time + 12)
+        {
+            int total_mirror = 0;
+            for (auto &j: result)
+                if (j.second < i->attack_time)
+                    total_mirror += j.first;
+            if (total_mirror == 3)
+            {
+                result.emplace_back(1, i->attack_time);
+                result.emplace_back(-1, i->attack_time);
+            }
+            else
+            {
+                result.emplace_back(1, i->attack_time);
+                result.emplace_back(-1, i->attack_time + 4);
+            }
+            A_time = i->attack_time;
+        }
+        //skill:E
+        if (front && i->c_point == this && i->attack_way == "E" && "release" <= i->release_or_hit)
+        {
+            int total_mirror = 0;
+            for (auto &j: result)
+                if (j.second < i->attack_time)
+                    total_mirror += j.first;
+            if (total_mirror == 3)
+            {
+                result.emplace_back(1, i->attack_time);
+                result.emplace_back(-1, i->attack_time);
+            }
+            else if (total_mirror > 0)
+            {
+                result.emplace_back(1, i->attack_time);
+                result.emplace_back(-1, i->attack_time + 4);
+            }
+            else if (total_mirror == 0)
+            {
+                result.emplace_back(2, i->attack_time);
+                result.emplace_back(-1, i->attack_time + 4);
+                result.emplace_back(-1, i->attack_time + 8);
+            }
+        }
+    }
+    return result;
+}
+
+string Alhaitham::get_ele_type(const Single_Attack *single_attack)
+{
+    if (single_attack == nullptr) return ele_type;
+
+    string result = Character::get_ele_type(single_attack);
+    //state下
+    auto mirror_time = get_mirror_time(single_attack);
+    int total_mirror = 0;
+    for (auto &i: mirror_time)
+        if (i.second < single_attack->attack_config->attack_time)
+            total_mirror += i.first;
+    if (total_mirror > 0) result = "草";
+    return result;
+}
+
+attribute_data<double> Alhaitham::get_extra(const Single_Attack *single_attack)
+{
+    attribute_data<double> result = Character::get_extra(single_attack);
+    //constellation 2
+    if (constellation >= 2)
+    {
+        auto mirror_time = get_mirror_time(single_attack);
+        int total_level = 0;
+        for (auto &i: mirror_time)
+            if (i.first > 0 && check_time_constrain(i.second, single_attack->attack_config->attack_time, 8, single_attack->team_config->rotation_time))
+                total_level += i.first;
+        result = result + attribute_data("元素精通", min(total_level, 4) * 50.0);
+    }
+    //constellation 4
+    if (constellation >= 4)
+    {
+        
+    }
+    return result;
+}
+
+attribute_data<double> Alhaitham::get_team(const Single_Attack *other_single_attack)
+{
+    attribute_data<double> result = Character::get_team(other_single_attack);
+
+    return result;
+}
+
+attribute_data<double> Alhaitham::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
+{
+    attribute_data<double> result = Character::get_convert(single_attack, panel);
+    //talent 2
+    if (single_attack->attack_config->attack_way == "E" || single_attack->attack_config->attack_way == "Q")
+        result = result + attribute_data("伤害加成", min((panel.data["元素精通"] + single_attack->converted_percentage.data.at("元素精通")) * 0.001, 1.0));
+    return result;
+}
+
+double Alhaitham::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
+{
+    double result = Character::get_extra_rate(single_attack, panel);
+    //skill:E,Q
+    vector<double> E_13{3.291, 2.856, 2.856 * 2, 2.856 * 3};
+    vector<double> E_12{3.098, 2.688, 2.688 * 2, 2.688 * 3};
+    vector<double> E_10{2.788, 2.419, 2.419 * 2, 2.419 * 3};
+    vector<double> E_9{2.633, 2.285, 2.285 * 2, 2.285 * 3};
+    vector<double> Q_13{2.067};
+    vector<double> Q_12{1.946};
+    vector<double> Q_10{1.751};
+    vector<double> Q_9{1.654};
+
+    if (single_attack->attack_config->attack_way == "E")
+    {
+        if (E_level == 13) result = result + E_13[single_attack->attack_config->rate_pos] * panel.data["元素精通"];
+        else if (E_level == 12) result = result + E_12[single_attack->attack_config->rate_pos] * panel.data["元素精通"];
+        else if (E_level == 10) result = result + E_10[single_attack->attack_config->rate_pos] * panel.data["元素精通"];
+        else result = result + E_9[single_attack->attack_config->rate_pos] * panel.data["元素精通"];
+    }
+    else if (single_attack->attack_config->attack_way == "Q")
+    {
+        if (Q_level == 13) result = result + Q_13[single_attack->attack_config->rate_pos] * panel.data["元素精通"];
+        else if (Q_level == 12) result = result + Q_12[single_attack->attack_config->rate_pos] * panel.data["元素精通"];
+        else if (Q_level == 10) result = result + Q_10[single_attack->attack_config->rate_pos] * panel.data["元素精通"];
+        else result = result + Q_9[single_attack->attack_config->rate_pos] * panel.data["元素精通"];
+    }
+    return result;
+}
+
+//string get_ele_type(const Single_Attack *single_attack)
+//{
+//    if (single_attack == nullptr) return ele_type;
+//
+//    string result = Character::get_ele_type(single_attack);
+//
+//    return result;
+//}
+//
+//attribute_data<int> get_useful_attribute(const Single_Attack *single_attack)
+//{
+//    attribute_data<int> result = Character::get_useful_attribute(single_attack);
+//
+//    return result;
+//}
+//
+//attribute_data<double> get_extra(const Single_Attack *single_attack)
+//{
+//    attribute_data<double> result = Character::get_extra(single_attack);
+//
+//    return result;
+//}
+//
+//attribute_data<double> get_team(const Single_Attack *other_single_attack)
+//{
+//    attribute_data<double> result = Character::get_team(other_single_attack);
+//
+//    return result;
+//}
+//
+//attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
+//{
+//    attribute_data<double> result = Character::get_convert(single_attack, panel);
+//
+//    return result;
+//}
+//
+//double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
+//{
+//    double result = Character::get_extra_rate(single_attack, panel);
+//
+//    return result;
+//}

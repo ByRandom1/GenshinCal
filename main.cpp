@@ -275,6 +275,11 @@ string a_main3[5] = {"生命值", "攻击力", "防御力", "元素精通", "元
 string a_main4[5] = {"生命值", "攻击力", "防御力", "元素精通", "伤害加成"};
 string a_main5[7] = {"生命值", "攻击力", "防御力", "元素精通", "暴击率", "暴击伤害", "治疗加成"};
 
+bool compare_Deployment(Deployment *a, Deployment *b)
+{
+    return a->total_damage > b->total_damage;
+}
+
 void cal_optimal_combination(Config_File *config)
 {
     ofstream outfile;
@@ -357,7 +362,7 @@ void cal_optimal_combination(Config_File *config)
 
             if (!c_w_pair.empty())
             {
-                stable_sort(c_w_pair.begin(), c_w_pair.end());
+                stable_sort(c_w_pair.begin(), c_w_pair.end(), compare_Deployment);
                 double optimal_damage = c_w_pair[0]->total_damage;
                 for (auto &c_w: c_w_pair)
                     if (c_w->total_damage / optimal_damage >= out_filter_percentage) out.push_back(c_w);
@@ -373,7 +378,7 @@ void cal_optimal_combination(Config_File *config)
 
         if (!out.empty())
         {
-            stable_sort(out.begin(), out.end());
+            stable_sort(out.begin(), out.end(), compare_Deployment);
             double total_damage_baseline = out[0]->total_damage;
             for (auto &d: out)
             {

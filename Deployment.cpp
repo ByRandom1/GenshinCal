@@ -40,11 +40,6 @@ Attack_Config::Attack_Config(Character *c_point_,
     attack_time = attack_time_;
 }
 
-bool Attack_Config::operator<(const Attack_Config &other) const
-{
-    return this->attack_time > other.attack_time;
-}
-
 Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
                          int E_energy_num1, int E_energy_num2, int E_energy_num3, int E_energy_num4,
                          string ele_attach_type_,
@@ -105,7 +100,7 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
     base_def = self->c_point->get_def();
     base_skillrate = self->c_point->get_rate(attack_config->attack_way, attack_config->rate_pos);
     percentage = attribute_data(1.0, 1.0, 1.0, 0.0, 1.0, 0.05, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-                 + self->c_point->get_break() + self->c_point->get_extra(this)
+                 + self->c_point->get_break(self->c_point->get_ele_type(this)) + self->c_point->get_extra(this)
                  + self->w_point->get_break(self->c_point->get_ele_type(this)) + self->w_point->get_extra(this);
     if (self->suit1 == self->suit2)
     {
@@ -294,11 +289,6 @@ Deployment::~Deployment()
     for (auto &i: attack_list) delete i;
 }
 
-bool Deployment::operator<(const Deployment &other) const
-{
-    return this->total_damage < other.total_damage;
-}
-
 int Deployment::get_all_data()
 {
     //cal recharge
@@ -454,7 +444,7 @@ void Deployment::cal_optimal_entry_num()
                                                             for (auto &i: attack_list)
                                                             {
                                                                 double damage = i->cal_damage(temp_entry_value, min_recharge);
-                                                                if (damage == -1) goto NEXT_ROUND;
+                                                                if (damage == -1) goto NEXT_RECHARGE;
                                                                 else temp_total_damage += damage;
                                                             }
 
@@ -476,6 +466,7 @@ void Deployment::cal_optimal_entry_num()
                                                     NEXT_ROUND:;
                                                 }
                                         }
+                                    NEXT_RECHARGE:;
                                 }
                         }
                 }

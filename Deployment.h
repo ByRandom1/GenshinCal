@@ -52,8 +52,6 @@ struct Attack_Config
                   bool background_,
                   string react_type_,
                   double attack_time_);
-
-    inline bool operator<(const Attack_Config &other) const;
 };
 
 struct Team_Config
@@ -115,8 +113,6 @@ public:
     Deployment(Combination *self_, Team_Config *team_config_);
 
     ~Deployment();
-
-    inline bool operator<(const Deployment &other) const;
 
     int get_all_data();
 

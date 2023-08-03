@@ -91,7 +91,7 @@ public:
 
     double get_rate(const string &attack_way, int pos);
 
-    attribute_data<double> get_break();
+    attribute_data<double> get_break(const string &ele_type_);
 
     virtual string get_ele_type(const Single_Attack *single_attack);
 
@@ -133,6 +133,25 @@ public:
 
 private:
     vector<pair<double, double>> get_E_time(const Single_Attack *single_attack);
+};
+
+class Alhaitham : public Character
+{
+public:
+    Alhaitham(int A_level, int E_level, int Q_level, int constellation);
+
+    string get_ele_type(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+
+    attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
+
+    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
+
+private:
+    vector<pair<int, double>> get_mirror_time(const Single_Attack *single_attack);
 };
 
 #endif //GENSHINCAL_CHARACTER_H
