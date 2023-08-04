@@ -38,18 +38,16 @@ struct Combination
 struct Attack_Config
 {
     Character *c_point;
+    string action;//release hit switch dash
     string attack_way;
-    string release_or_hit;
     int rate_pos;
-    bool background;
     string react_type;
     double attack_time;
 
     Attack_Config(Character *c_point_,
+                  string action_,
                   string attack_way_,
-                  string release_or_hit_,
                   int rate_pos_,
-                  bool background_,
                   string react_type_,
                   double attack_time_);
 };
@@ -58,13 +56,11 @@ struct Team_Config
 {
 public:
     Combination *team[4];
-    int E_energy_num[4];
     string ele_attach_type;
     vector<Attack_Config *> rotation;
     double rotation_time;
 
     Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
-                int E_energy_num1, int E_energy_num2, int E_energy_num3, int E_energy_num4,
                 string ele_attach_type_,
                 vector<Attack_Config *> rotation_,
                 double rotation_time_);

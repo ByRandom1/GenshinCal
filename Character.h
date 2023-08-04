@@ -101,7 +101,6 @@ public:
 
     virtual attribute_data<double> get_team(const Single_Attack *other_single_attack);
 
-    //TODO:一般来说总是前台角色自产自销，但后台持续产球带来偏差，考虑到实现难度忽略
     virtual void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy);
 
     virtual attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel);
@@ -111,6 +110,8 @@ public:
     virtual double get_react_bonus(const Single_Attack *single_attack, string react_type);
 
     friend void generate_gcsim_script(Config_File *config);
+
+    friend class Raiden;//Q_energy
 };
 
 class Hutao : public Character
@@ -126,6 +127,8 @@ public:
     attribute_data<double> get_extra(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+
+    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 
     attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
@@ -147,12 +150,62 @@ public:
 
     attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
 
+    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
     attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
     double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
 private:
     vector<pair<int, double>> get_mirror_time(const Single_Attack *single_attack);
+};
+
+class Raiden : public Character
+{
+    //天赋1、1命不建构：默认满层愿力；6命不建构
+public:
+    Raiden(int A_level, int E_level, int Q_level, int constellation);
+
+    attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+
+    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
+
+private:
+    vector<pair<double, double>> get_Q_time(const Single_Attack *single_attack);
+};
+
+class Ayaka :public Character
+{
+    //1命不建构：不需要；2命不建构：对单；6命不建构
+public:
+    Ayaka(int A_level, int E_level, int Q_level, int constellation);
+
+    string get_ele_type(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+
+    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+};
+
+class Ganyu : public Character
+{
+    //2命不建构：不需要；6命不建构
+public:
+    Ganyu(int A_level, int E_level, int Q_level, int constellation);
+
+    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+
+    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 };
 
 #endif //GENSHINCAL_CHARACTER_H

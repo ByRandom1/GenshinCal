@@ -39,7 +39,6 @@ Config_File::Config_File(string team_name_, vector<string> file)
 
     Character *ch[4];
     Combination *team[4];
-    int E_energy_num[4];
     string ele_attach_type;
     vector<Attack_Config *> total;
     double rotation_time;
@@ -91,13 +90,12 @@ Config_File::Config_File(string team_name_, vector<string> file)
                     map<string, string> params = get_params(info, '=');
                     team[pos] = new Combination(ch[pos], find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]),
                                                 find_artifact_by_name(params["suit2"]), "", "", "");
-                    E_energy_num[pos] = stoi(params["E_energy_num"]);
                 }
                 else if (info[2] == "attack_config")
                 {
                     map<string, string> params = get_params(info, '=');
-                    total.push_back(new Attack_Config(ch[pos], params["attack_way"], params["release_or_hit"], stoi(params["rate_pos"]),
-                                                      (bool) stoi(params["background"]), params["react_type"], stod(params["attack_time"])));
+                    total.push_back(new Attack_Config(ch[pos], params["action"], params["attack_way"], stoi(params["rate_pos"]),
+                                                      params["react_type"], stod(params["attack_time"])));
                 }
             }
         }
@@ -105,9 +103,7 @@ Config_File::Config_File(string team_name_, vector<string> file)
     }
 
     stable_sort(total.begin(), total.end(), compare_Attack_Config);
-    team_config = new Team_Config(team[0], team[1], team[2], team[3],
-                                  E_energy_num[0], E_energy_num[1], E_energy_num[2], E_energy_num[3],
-                                  ele_attach_type, total, rotation_time);
+    team_config = new Team_Config(team[0], team[1], team[2], team[3], ele_attach_type, total, rotation_time);
 }
 
 Config_File::~Config_File()
@@ -137,10 +133,10 @@ string Config_File::generate_sample_config()
     result += "ATTACK_SCRIPT END\n";
     result += "\n";
     result += "all add team_config ele_attach_type= rotation_time=\n";
-    result += "A add team_combination weapon= suit1= suit2= E_energy_num=\n";
-    result += "B add team_combination weapon= suit1= suit2= E_energy_num=\n";
-    result += "C add team_combination weapon= suit1= suit2= E_energy_num=\n";
-    result += "D add team_combination weapon= suit1= suit2= E_energy_num=\n";
-    result += "A/B/C/D add attack_config attack_way= release_or_hit= rate_pos= background= react_type= attack_time=";
+    result += "A add team_combination weapon= suit1= suit2=\n";
+    result += "B add team_combination weapon= suit1= suit2=\n";
+    result += "C add team_combination weapon= suit1= suit2=\n";
+    result += "D add team_combination weapon= suit1= suit2=\n";
+    result += "A/B/C/D add attack_config action= attack_way= rate_pos= react_type= attack_time=";
     return result;
 }

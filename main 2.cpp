@@ -74,6 +74,13 @@ struct weapon_artifact_related_arguments
     }
 };
 
+//神万莫 甘
+//胡夜钟 行
+//海八纳 钟
+//雷夜班 香/万
+//
+//胡 海+1 神 雷2+1 / 夜+1 八6 纳 香 行 甘 / 钟 万 班 莫
+
 //TODO:less important 将所有添加的属性分为face_percentage,converted_face_percentage,monster_percentage，增加过程为face(get_convert)->converted->monster，目前来看只有增伤、暴击、爆伤可能不加在面板上，不影响结果（没有增伤/暴击/爆伤转别的）
 //TODO:important 部分加成默认触发，应根据攻击序列确定触发
 //build new character(needed) 保证AEQ单一攻击次数
@@ -236,6 +243,7 @@ void init_character_data()
     temp.clear();
     //默认Q后E，触发4命
 
+    //no
     temp.push_back(nullptr);//E后蓄力减少
     temp.push_back(nullptr);//E后全队回能
     temp.push_back(nullptr);//Ecd9s
@@ -251,6 +259,7 @@ void init_character_data()
     temp.clear();
     //E攻击力加成(special) (get_team) 全队回能(recharge)
 
+    //no
     //NO NEED TO CALCULATE
     //BUILD BASIC INFORMATION AND GET_TEAM
     character_list.push_back(new Character("温迪", "venti", "风", "弓", 10531, 263, 669, "元素充能效率", 0.32,

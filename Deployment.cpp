@@ -24,24 +24,21 @@ Combination::Combination(Character *c_point_,
 }
 
 Attack_Config::Attack_Config(Character *c_point_,
+                             string action_,
                              string attack_way_,
-                             string release_or_hit_,
                              int rate_pos_,
-                             bool background_,
                              string react_type_,
                              double attack_time_)
 {
     c_point = c_point_;
+    action = std::move(action_);
     attack_way = std::move(attack_way_);
-    release_or_hit = std::move(release_or_hit_);
     rate_pos = rate_pos_;
-    background = background_;
     react_type = std::move(react_type_);
     attack_time = attack_time_;
 }
 
 Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
-                         int E_energy_num1, int E_energy_num2, int E_energy_num3, int E_energy_num4,
                          string ele_attach_type_,
                          vector<Attack_Config *> rotation_,
                          double rotation_time_)
@@ -50,10 +47,6 @@ Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Comb
     team[1] = c2;
     team[2] = c3;
     team[3] = c4;
-    E_energy_num[0] = E_energy_num1;
-    E_energy_num[1] = E_energy_num2;
-    E_energy_num[2] = E_energy_num3;
-    E_energy_num[3] = E_energy_num4;
     ele_attach_type = std::move(ele_attach_type_);
     rotation = std::move(rotation_);
     rotation_time = rotation_time_;
@@ -277,7 +270,7 @@ void Single_Attack::get_react_value(double mastery, double &extra_rate, double &
 Deployment::Deployment(Combination *self_, Team_Config *team_config_)
 {
     for (auto i: team_config_->rotation)
-        if (i->c_point == self_->c_point && "hit" <= i->release_or_hit)
+        if (i->c_point == self_->c_point && "hit" == i->action)
             attack_list.push_back(new Single_Attack(self_, team_config_, i));
     min_recharge = 0;
     total_damage = 0;

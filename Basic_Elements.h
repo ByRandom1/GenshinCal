@@ -113,4 +113,10 @@ bool operator<=(const string &inf, const string &target);
 //front + constrain > back
 bool check_time_constrain(double front, double back, double constrain, double rotation_time);
 
+class Character;
+
+class Attack_Config;
+
+Character *get_front(const vector<Attack_Config *> &rotation, double time_point);
+
 #endif //GENSHINCAL_BASIC_ELEMENTS_H

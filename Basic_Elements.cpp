@@ -3,6 +3,7 @@
 //
 
 #include "Basic_Elements.h"
+#include "Deployment.h"
 
 bool operator<=(const string &inf, const string &target)
 {
@@ -16,4 +17,15 @@ bool check_time_constrain(double front, double back, double constrain, double ro
     if (back > front) return (front + constrain > back);
         //front在back之后，下一轮back吃这一轮front的加成
     else return (front + constrain > back + rotation_time);
+}
+
+Character *get_front(const vector<Attack_Config *> &rotation, double time_point)
+{
+    Character *front = nullptr;
+    for (auto i: rotation)
+    {
+        if (i->attack_time >= time_point) break;
+        if (i->action == "switch") front = i->c_point;
+    }
+    return front;
 }

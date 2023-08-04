@@ -162,27 +162,7 @@ attribute_data<double> Character::get_team(const Single_Attack *single_attack)
 { return {}; }
 
 void Character::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
-{
-    if (single_attack->self->c_point == this)
-    {
-        Q_energy_modify = Q_energy;
-        for (int i = 0; i < 4; ++i)
-            if (single_attack->team_config->team[i]->c_point == this)
-            {
-                energy += single_attack->team_config->E_energy_num[i] * E_energy * 3 * 1;
-                break;
-            }
-    }
-    else
-    {
-        for (int i = 0; i < 4; ++i)
-            if (single_attack->team_config->team[i]->c_point == this)
-            {
-                energy += single_attack->team_config->E_energy_num[i] * E_energy * (single_attack->self->c_point->get_ele_type(single_attack) == ele_type ? 3 : 1) * 0.6;
-                break;
-            }
-    }
-}
+{}
 
 attribute_data<double> Character::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 { return {}; }
@@ -209,8 +189,8 @@ vector<pair<double, double>> Hutao::get_E_time(const Single_Attack *single_attac
     {
         if (E_release_time == -1 &&
             single_attack->team_config->rotation[i]->c_point == this &&
-            single_attack->team_config->rotation[i]->attack_way == "E" &&
-            "release" <= single_attack->team_config->rotation[i]->release_or_hit)
+            single_attack->team_config->rotation[i]->action == "release" &&
+            single_attack->team_config->rotation[i]->attack_way == "E")
         {
             E_release_time = single_attack->team_config->rotation[i]->attack_time;
             i--;
@@ -225,7 +205,7 @@ vector<pair<double, double>> Hutao::get_E_time(const Single_Attack *single_attac
                 E_release_time = -1;
             }
                 //switch
-            else if ("switch" <= single_attack->team_config->rotation[i + 1]->release_or_hit &&
+            else if (single_attack->team_config->rotation[i + 1]->action == "switch" &&
                      single_attack->team_config->rotation[i + 1]->c_point != this)
             {
                 result.emplace_back(E_release_time, single_attack->team_config->rotation[i + 1]->attack_time);
@@ -292,6 +272,11 @@ attribute_data<double> Hutao::get_team(const Single_Attack *other_single_attack)
     return result;
 }
 
+void Hutao::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+{
+    //TODO
+}
+
 attribute_data<double> Hutao::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 {
     attribute_data<double> result = Character::get_convert(single_attack, panel);
@@ -343,7 +328,7 @@ vector<pair<int, double>> Alhaitham::get_mirror_time(const Single_Attack *single
     for (auto i: single_attack->team_config->rotation)
     {
         //退场
-        if ("switch" <= i->release_or_hit && i->c_point != this)
+        if (i->action == "switch" && i->c_point != this)
         {
             int total_mirror = get_mirror_num(result, i->attack_time);
             if (total_mirror != 0) result.emplace_back(-total_mirror, i->attack_time);
@@ -357,14 +342,7 @@ vector<pair<int, double>> Alhaitham::get_mirror_time(const Single_Attack *single
         //Q返还
         if (Q_to_deal.second != -1 && i->attack_time >= Q_to_deal.second)
         {
-            bool front = false;
-            for (auto j: single_attack->team_config->rotation)
-            {
-                if (j->attack_time >= Q_to_deal.second) break;
-                if ("switch" <= j->release_or_hit && j->c_point != this) front = false;
-                if ("switch" <= j->release_or_hit && j->c_point == this) front = true;
-            }
-            if (front)
+            if (get_front(single_attack->team_config->rotation, Q_to_deal.second) == this)
             {
                 int total_mirror = get_mirror_num(result, Q_to_deal.second);
                 result.emplace_back(Q_to_deal.first, Q_to_deal.second);
@@ -376,7 +354,7 @@ vector<pair<int, double>> Alhaitham::get_mirror_time(const Single_Attack *single
             Q_to_deal.second = -1;
         }
         //E
-        if (i->c_point == this && i->attack_way == "E" && "release" <= i->release_or_hit)
+        if (i->c_point == this && i->attack_way == "E" && i->action == "release")
         {
             int total_mirror = get_mirror_num(result, i->attack_time);
             if (total_mirror == 3)
@@ -393,7 +371,7 @@ vector<pair<int, double>> Alhaitham::get_mirror_time(const Single_Attack *single
         }
         //talent 1
         if (i->c_point == this && (i->attack_way == "重A" || i->attack_way == "下落A") &&
-            "hit" <= i->release_or_hit && i->attack_time >= last_A_generate + 12)
+            i->action == "hit" && i->attack_time >= last_A_generate + 12)
         {
             int total_mirror = get_mirror_num(result, i->attack_time);
             if (total_mirror == 3)
@@ -410,7 +388,7 @@ vector<pair<int, double>> Alhaitham::get_mirror_time(const Single_Attack *single
             last_A_generate = i->attack_time;
         }
         //Q
-        if (i->c_point == this && i->attack_way == "Q" && "release" <= i->release_or_hit)
+        if (i->c_point == this && i->attack_way == "Q" && i->action == "release")
         {
             int total_mirror = get_mirror_num(result, i->attack_time);
             if (total_mirror != 0) result.emplace_back(-total_mirror, i->attack_time);
@@ -453,7 +431,7 @@ attribute_data<double> Alhaitham::get_extra(const Single_Attack *single_attack)
     {
         auto mirror_time = get_mirror_time(single_attack);
         for (auto i: single_attack->team_config->rotation)
-            if (i->c_point == this && i->attack_way == "Q" && "release" <= i->release_or_hit)
+            if (i->c_point == this && i->attack_way == "Q" && i->action == "release")
                 for (auto j: mirror_time)
                     if (j.second == i->attack_time + 2)
                         if (get_ele_type(single_attack) == "草" && check_time_constrain(i->attack_time + 2, single_attack->attack_config->attack_time, 15, single_attack->team_config->rotation_time))
@@ -504,7 +482,7 @@ attribute_data<double> Alhaitham::get_team(const Single_Attack *other_single_att
     {
         auto mirror_time = get_mirror_time(other_single_attack);
         for (auto i: other_single_attack->team_config->rotation)
-            if (i->c_point == this && i->attack_way == "Q" && "release" <= i->release_or_hit)
+            if (i->c_point == this && i->attack_way == "Q" && i->action == "release")
                 for (auto j: mirror_time)
                     if (j.second == i->attack_time)
                         if (check_time_constrain(i->attack_time, other_single_attack->attack_config->attack_time, 15, other_single_attack->team_config->rotation_time))
@@ -516,6 +494,12 @@ attribute_data<double> Alhaitham::get_team(const Single_Attack *other_single_att
     }
     return result;
 }
+
+void Alhaitham::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+{
+    //TODO
+}
+
 
 attribute_data<double> Alhaitham::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 {
@@ -554,6 +538,333 @@ double Alhaitham::get_extra_rate(const Single_Attack *single_attack, attribute_d
         else result = result + Q_9[single_attack->attack_config->rate_pos] * panel.data["元素精通"];
     }
     return result;
+}
+
+Raiden::Raiden(int A_level, int E_level, int Q_level, int constellation) : Character("雷电将军", "raiden", "雷", "长柄武器", 12907, 337, 789, attribute_data("元素充能效率", 0.32),
+                                                                                     A_level, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "物理", vector<double>{0.784, 0.785, 0.986, 0.573, 0.573, 1.294}, vector<double>{0.728, 0.73, 0.916, 0.533, 0.533, 1.202},
+                                                                                     "物理", vector<double>{1.969}, vector<double>{1.83}, "物理", vector<double>{3.16}, vector<double>{2.93},
+                                                                                     E_level, 0.5, false, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "雷", vector<double>{2.491, 0.893}, vector<double>{2.344, 0.84}, vector<double>{2.11, 0.756}, vector<double>{1.992, 0.714},
+                                                                                     Q_level, 90, false, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "雷",
+                                                                                     vector<double>{8.52 + 0.0826 * 60, 0.935 + 0.0154 * 60, 0.919 + 0.0154 * 60, 1.125 + 0.0154 * 60, 0.646 + 0.0154 * 60, 0.646 + 0.0154 * 60, 1.546 + 0.0154 * 60, 1.288 + 0.0154 * 60, 1.555 + 0.0154 * 60, 3.82 + 0.0154 * 60},
+                                                                                     vector<double>{8.02 + 0.0778 * 60, 0.89 + 0.0145 * 60, 0.874 + 0.0145 * 60, 1.07 + 0.0145 * 60, 0.614 + 0.0145 * 60, 0.614 + 0.0145 * 60, 1.471 + 0.0145 * 60, 1.225 + 0.0145 * 60, 1.479 + 0.0145 * 60, 3.6 + 0.0154 * 60},
+                                                                                     vector<double>{7.21 + 0.07 * 60, 0.798 + 0.0131 * 60, 0.784 + 0.0131 * 60, 0.96 + 0.0131 * 60, 0.551 + 0.0131 * 60, 0.551 + 0.0131 * 60, 1.319 + 0.0131 * 60, 1.099 + 0.0131 * 60, 1.327 + 0.0131 * 60, 3.16 + 0.0154 * 60},
+                                                                                     vector<double>{6.81 + 0.0661 * 60, 0.752 + 0.0123 * 60, 0.739 + 0.0123 * 60, 0.905 + 0.0123 * 60, 0.52 + 0.0123 * 60, 0.52 + 0.0123 * 60, 1.244 + 0.0123 * 60, 1.036 + 0.0123 * 60, 1.251 + 0.0123 * 60, 2.93 + 0.0154 * 60},
+                                                                                     constellation)
+{}
+
+vector<pair<double, double>> Raiden::get_Q_time(const Single_Attack *single_attack)
+{
+    vector<pair<double, double>> result;
+    double Q_release_time = -1;
+    for (int i = 0; i < single_attack->team_config->rotation.size(); ++i)
+    {
+        if (Q_release_time == -1 &&
+            single_attack->team_config->rotation[i]->c_point == this &&
+            single_attack->team_config->rotation[i]->action == "release" &&
+            single_attack->team_config->rotation[i]->attack_way == "Q")
+        {
+            Q_release_time = single_attack->team_config->rotation[i]->attack_time;
+            i--;
+        }
+        if (Q_release_time != -1)
+        {
+            //time up
+            if (i + 1 > single_attack->team_config->rotation.size() ||
+                single_attack->team_config->rotation[i + 1]->attack_time > Q_release_time + 7)
+            {
+                result.emplace_back(Q_release_time, single_attack->team_config->rotation[i]->attack_time);
+                Q_release_time = -1;
+            }
+                //switch
+            else if (single_attack->team_config->rotation[i + 1]->action == "switch" &&
+                     single_attack->team_config->rotation[i + 1]->c_point != this)
+            {
+                result.emplace_back(Q_release_time, single_attack->team_config->rotation[i + 1]->attack_time);
+                Q_release_time = -1;
+            }
+        }
+    }
+    return result;
+}
+
+attribute_data<int> Raiden::get_useful_attribute(const Single_Attack *single_attack)
+{
+    attribute_data<int> result = Character::get_useful_attribute(single_attack);
+    //talent 2
+    if (get_ele_type(single_attack) == "雷") result = result + attribute_data("元素充能效率", 1);
+    return result;
+}
+
+attribute_data<double> Raiden::get_extra(const Single_Attack *single_attack)
+{
+    attribute_data<double> result = Character::get_extra(single_attack);
+    //skill:E
+    for (auto i: single_attack->team_config->rotation)
+        if (i->c_point == this && i->attack_way == "E" && i->action == "release")
+            if (single_attack->attack_config->attack_way == "Q" && check_time_constrain(i->attack_time, single_attack->attack_config->attack_time, 25, single_attack->team_config->rotation_time))
+            {
+                result = result + attribute_data("伤害加成", 0.003 * Q_energy);
+                break;
+            }
+    //constellation 2
+    if (constellation >= 2)
+    {
+        auto Q_time = get_Q_time(single_attack);
+        for (auto &i: Q_time)
+            if (i.first <= single_attack->attack_config->attack_time &&
+                single_attack->attack_config->attack_time <= i.second)
+            {
+                result = result + attribute_data("防御无视", 0.6);
+                break;
+            }
+    }
+    return result;
+}
+
+attribute_data<double> Raiden::get_team(const Single_Attack *other_single_attack)
+{
+    attribute_data<double> result = Character::get_team(other_single_attack);
+    //skill:E
+    for (auto i: other_single_attack->team_config->rotation)
+        if (i->c_point == this && i->attack_way == "E" && i->action == "release")
+            if (other_single_attack->attack_config->attack_way == "Q" && check_time_constrain(i->attack_time, other_single_attack->attack_config->attack_time, 25, other_single_attack->team_config->rotation_time))
+            {
+                result = result + attribute_data("伤害加成", 0.003 * other_single_attack->self->c_point->Q_energy);
+                break;
+            }
+    //constellation 4
+    if (constellation >= 4)
+    {
+        auto Q_time = get_Q_time(other_single_attack);
+        for (auto &i: Q_time)
+            if (check_time_constrain(i.second, other_single_attack->attack_config->attack_time, 10, other_single_attack->team_config->rotation_time))
+            {
+                result = result + attribute_data("攻击力", 0.3);
+                break;
+            }
+    }
+    return result;
+}
+
+void Raiden::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+{
+    if (single_attack->self->c_point == this) Q_energy_modify = Q_energy;
+    //skill:E
+    for (auto i: single_attack->team_config->rotation)
+        if (i->c_point == this && i->attack_way == "E" && i->action == "hit" && i->rate_pos != 0)
+            energy += E_energy * (single_attack->self->c_point->get_ele_type(single_attack) == ele_type ? 3 : 1) *
+                      (get_front(single_attack->team_config->rotation, i->attack_time) == single_attack->self->c_point ? 1 : 0.6);
+    //skill:Q talent 2
+    double typical_recharge = 2.7;
+    double Q_hit_time_point = -1;
+    int count = 0;
+    for (auto i: single_attack->team_config->rotation)
+        if (i->c_point == this && i->attack_way == "Q" && i->action == "hit" && i->rate_pos != 0)
+            if (i->attack_time >= Q_hit_time_point + 1 && count < 5)
+            {
+                Q_energy_modify -= 2.5 * (1 + (typical_recharge - 1) * 0.6);
+                Q_hit_time_point = i->attack_time;
+                count++;
+            }
+}
+
+attribute_data<double> Raiden::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
+{
+    attribute_data<double> result = Character::get_convert(single_attack, panel);
+    //talent 2
+    if (get_ele_type(single_attack) == "雷")
+        result = result + attribute_data("伤害加成", (panel.data["元素充能效率"] - 1) * 0.4);
+    return result;
+}
+
+Ayaka::Ayaka(int A_level, int E_level, int Q_level, int constellation) : Character("神里绫华", "ayaka", "冰", "单手剑", 12858, 342, 784, attribute_data("暴击伤害", 0.384),
+                                                                                   A_level, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "物理", vector<double>{0.904, 0.962, 1.238, 0.448, 0.448, 0.448, 1.545}, vector<double>{0.84, 0.894, 1.15, 0.416, 0.416, 0.416, 1.436},
+                                                                                   "物理", vector<double>{1.09}, vector<double>{1.013}, "物理", vector<double>{3.16}, vector<double>{2.93},
+                                                                                   E_level, 4.5, false, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "冰", vector<double>{5.083}, vector<double>{4.784}, vector<double>{4.305}, vector<double>{4.066},
+                                                                                   Q_level, 80, true, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "冰", vector<double>{2.386, 3.58}, vector<double>{2.246, 3.369}, vector<double>{2.021, 3.032}, vector<double>{1.909, 2.864},
+                                                                                   constellation)
+{}
+
+string Ayaka::get_ele_type(const Single_Attack *single_attack)
+{
+    if (single_attack == nullptr) return ele_type;
+    //dash
+    string result = Character::get_ele_type(single_attack);
+    double dash_time = -1;
+    for (auto i: single_attack->team_config->rotation)
+    {
+        //time up
+        if (dash_time != -1 && i->attack_time > dash_time + 5) dash_time = -1;
+        //dash
+        if (i->c_point == this && i->action == "dash") dash_time = i->attack_time;
+        //switch
+        if (i->c_point != this && i->action == "switch") dash_time = -1;
+
+        if (i == single_attack->attack_config && dash_time != -1)
+        {
+            result = "冰";
+            break;
+        }
+    }
+    return result;
+}
+
+attribute_data<double> Ayaka::get_extra(const Single_Attack *single_attack)
+{
+    attribute_data<double> result = Character::get_extra(single_attack);
+    //talent 1
+    for (auto &i: single_attack->team_config->rotation)
+        if (i->c_point == this && i->attack_way == "E" && i->action == "release")
+            if ((single_attack->attack_config->attack_way == "平A" || single_attack->attack_config->attack_way == "重A") &&
+                check_time_constrain(i->attack_time, single_attack->attack_config->attack_time, 6, single_attack->team_config->rotation_time))
+            {
+                result = result + attribute_data("伤害加成", 0.3);
+                break;
+            }
+    //talent 2
+    for (auto &i: single_attack->team_config->rotation)
+        if (i->c_point == this && i->action == "dash")
+            if (get_ele_type(single_attack) == "冰" &&
+                check_time_constrain(i->attack_time, single_attack->attack_config->attack_time, 10, single_attack->team_config->rotation_time))
+            {
+                result = result + attribute_data("伤害加成", 0.18);
+                break;
+            }
+    //constellation 4
+    if (constellation >= 4)
+    {
+        for (auto &i: single_attack->team_config->rotation)
+            if (i->c_point == this && i->attack_way == "Q" && i->action == "hit")
+                if (check_time_constrain(i->attack_time, single_attack->attack_config->attack_time, 6, single_attack->team_config->rotation_time))
+                {
+                    result = result + attribute_data("防御削弱", 0.3);
+                    break;
+                }
+    }
+    return result;
+}
+
+attribute_data<double> Ayaka::get_team(const Single_Attack *other_single_attack)
+{
+    attribute_data<double> result = Character::get_team(other_single_attack);
+    //constellation 4
+    if (constellation >= 4)
+    {
+        for (auto &i: other_single_attack->team_config->rotation)
+            if (i->c_point == this && i->attack_way == "Q" && i->action == "hit")
+                if (check_time_constrain(i->attack_time, other_single_attack->attack_config->attack_time, 6, other_single_attack->team_config->rotation_time))
+                {
+                    result = result + attribute_data("防御削弱", 0.3);
+                    break;
+                }
+    }
+    return result;
+}
+
+void Ayaka::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+{
+    //TODO
+}
+
+
+Ganyu::Ganyu(int A_level, int E_level, int Q_level, int constellation) : Character("甘雨", "ganyu", "冰", "弓", 9797, 335, 630, attribute_data("暴击伤害", 0.384),
+                                                                                   A_level, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "物理", vector<double>{0.627, 0.704, 0.899, 0.899, 0.954, 1.139}, vector<double>{0.583, 0.654, 0.836, 0.836, 0.886, 1.059},
+                                                                                   "冰", vector<double>{2.3, 3.92}, vector<double>{2.18, 3.7}, "物理", vector<double>{2.81}, vector<double>{2.61},
+                                                                                   E_level, 2, true, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "冰", vector<double>{2.81, 2.81}, vector<double>{2.64, 2.64}, vector<double>{2.38, 2.38}, vector<double>{2.24, 2.24},
+                                                                                   Q_level, 60, true, attribute_data(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0), "冰", vector<double>{1.49}, vector<double>{1.41}, vector<double>{1.26}, vector<double>{1.19},
+                                                                                   constellation)
+{}
+
+attribute_data<double> Ganyu::get_extra(const Single_Attack *single_attack)
+{
+    attribute_data<double> result = Character::get_extra(single_attack);
+    //talent 1
+    for (auto i: single_attack->team_config->rotation)
+        if (i->c_point == this && i->attack_way == "重A" && i->action == "release")
+            if (single_attack->attack_config->attack_way == "重A" &&
+                check_time_constrain(i->attack_time, single_attack->attack_config->attack_time, 5, single_attack->team_config->rotation_time))
+            {
+                result = result + attribute_data("暴击率", 0.2);
+                break;
+            }
+    //talent 2
+    for (auto i: single_attack->team_config->rotation)
+        if (i->c_point == this && i->attack_way == "Q" && i->action == "release")
+            if (get_front(single_attack->team_config->rotation, single_attack->attack_config->attack_time) == this &&
+                check_time_constrain(i->attack_time, single_attack->attack_config->attack_time, 17, single_attack->team_config->rotation_time) &&
+                get_ele_type(single_attack) == "冰")
+            {
+                result = result + attribute_data("伤害加成", 0.2);
+                break;
+            }
+    //constellation 1
+    if (constellation >= 1)
+    {
+        for (auto i: single_attack->team_config->rotation)
+            if (i->c_point == this && i->attack_way == "重A" && i->action == "hit")
+                if (get_ele_type(single_attack) == "冰" &&
+                    check_time_constrain(i->attack_time, single_attack->attack_config->attack_time, 6, single_attack->team_config->rotation_time))
+                {
+                    result = result + attribute_data("抗性削弱", 0.15);
+                    break;
+                }
+    }
+    //constellation 4
+    if (constellation >= 4)
+    {
+        for (auto i: single_attack->team_config->rotation)
+            if (i->c_point == this && i->attack_way == "Q" && i->action == "release")
+                if (check_time_constrain(i->attack_time, single_attack->attack_config->attack_time, 17, single_attack->team_config->rotation_time))
+                {
+                    result = result + attribute_data("伤害加成", min(0.25, 0.05 + 0.05 * ((single_attack->attack_config->attack_time - i->attack_time) / 3)));
+                    break;
+                }
+    }
+    return result;
+}
+
+attribute_data<double> Ganyu::get_team(const Single_Attack *other_single_attack)
+{
+    attribute_data<double> result = Character::get_team(other_single_attack);
+    //talent 2
+    for (auto i: other_single_attack->team_config->rotation)
+        if (i->c_point == this && i->attack_way == "Q" && i->action == "release")
+            if (get_front(other_single_attack->team_config->rotation, other_single_attack->attack_config->attack_time) == this &&
+                check_time_constrain(i->attack_time, other_single_attack->attack_config->attack_time, 17, other_single_attack->team_config->rotation_time) &&
+                other_single_attack->self->c_point->get_ele_type(other_single_attack) == "冰")
+            {
+                result = result + attribute_data("伤害加成", 0.2);
+                break;
+            }
+    //constellation 1
+    if (constellation >= 1)
+    {
+        for (auto i: other_single_attack->team_config->rotation)
+            if (i->c_point == this && i->attack_way == "重A" && i->action == "hit")
+                if (other_single_attack->self->c_point->get_ele_type(other_single_attack) == "冰" &&
+                    check_time_constrain(i->attack_time, other_single_attack->attack_config->attack_time, 6, other_single_attack->team_config->rotation_time))
+                {
+                    result = result + attribute_data("抗性削弱", 0.15);
+                    break;
+                }
+    }
+    //constellation 4
+    if (constellation >= 4)
+    {
+        for (auto i: other_single_attack->team_config->rotation)
+            if (i->c_point == this && i->attack_way == "Q" && i->action == "release")
+                if (check_time_constrain(i->attack_time, other_single_attack->attack_config->attack_time, 17, other_single_attack->team_config->rotation_time))
+                {
+                    result = result + attribute_data("伤害加成", min(0.25, 0.05 + 0.05 * ((other_single_attack->attack_config->attack_time - i->attack_time) / 3)));
+                    break;
+                }
+    }
+    return result;
+}
+
+void Ganyu::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+{
+    //TODO:E, constellation 1
 }
 
 //string get_ele_type(const Single_Attack *single_attack)

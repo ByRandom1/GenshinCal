@@ -240,6 +240,9 @@ void init_Character_list()
 {
     Character_list.push_back(new Hutao(10, 10, 10, 1));
     Character_list.push_back(new Alhaitham(10, 10, 10, 0));
+    Character_list.push_back(new Raiden(6, 10, 10, 0));
+    Character_list.push_back(new Ayaka(10, 10, 10, 0));
+    Character_list.push_back(new Ganyu(10, 10, 10, 0));
 }
 
 vector<Weapon *> Weapon_list;
