@@ -7,24 +7,28 @@
 
 bool operator<=(const string &inf, const string &target)
 {
-    return (target == "ALL") || (target.find(inf) != string::npos);
+    return target.find(inf) != string::npos;
 }
 
 //front + constrain > back
-bool check_time_constrain(double front, double back, double constrain, double rotation_time)
+bool check_time_constrain(double buff_start, double buff_end, double attack_time, double rotation_time)
 {
-    //单个循环内，front在back之前，这一轮back吃这一轮front的加成
-    if (back > front) return (front + constrain > back);
-        //front在back之后，下一轮back吃这一轮front的加成
-    else return (front + constrain > back + rotation_time);
+    //单个循环内
+    if (buff_start <= attack_time && attack_time <= buff_end) return true;
+    //跨越循环
+    if (buff_start <= attack_time + rotation_time && attack_time + rotation_time <= buff_end) return true;
+
+    return false;
 }
 
-Character *get_front(const vector<Attack_Config *> &rotation, double time_point)
+Character *get_front(const Team_Config *team_config, double time_point)
 {
+    //switch release hit 组成 rotation
     Character *front = nullptr;
-    for (auto i: rotation)
+    time_point = (time_point > team_config->rotation_time) ? time_point - team_config->rotation_time : time_point;
+    for (auto i: team_config->rotation)
     {
-        if (i->attack_time >= time_point) break;
+        if (i->attack_time > time_point) break;
         if (i->action == "switch") front = i->c_point;
     }
     return front;

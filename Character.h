@@ -81,7 +81,7 @@ public:
 
     string get_name();
 
-    string get_character_ele_type();
+    string get_ele_type();
 
     string get_weapon_type();
 
@@ -93,25 +93,35 @@ public:
 
     double get_rate(const string &attack_way, int pos);
 
-    attribute_data<double> get_break(const string &ele_type_);
-
-    //TODO:函数遵循这样一种写作规范（for，触发者，接受者条件1，接受者条件n，时间约束，buff内容，break）每个各占一行
+    attribute_data<double> get_break(const Single_Attack *single_attack);
 
     virtual string get_attack_ele_type(const Single_Attack *single_attack);
 
+    /*
+        buff遵循这样一种写作规范
+        for (可能的触发者)
+            if (触发者条件：写在一行)
+                if (检查接受Attack_Config的每一个条件：一个条件写一行；
+                    检查额外的条件：元素，层数限制，cd限制等，一个条件写一行)
+                {
+                    result = result + attribute_data(buff内容);
+                    break;
+                }
+    */
+
+    virtual void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy);
+
     virtual attribute_data<int> get_useful_attribute(const Single_Attack *single_attack);
 
-    virtual attribute_data<double> get_extra(const Single_Attack *single_attack);
+    virtual attribute_data<double> get_buff(const Single_Attack *single_attack);
 
-    virtual attribute_data<double> get_team(const Single_Attack *other_single_attack);
+    virtual attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel);
 
-    virtual void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy);
+    virtual attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel);
 
-    virtual attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel);
+    virtual double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel);
 
-    virtual attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate);
-
-    virtual double get_react_bonus(const Single_Attack *single_attack, string react_type);
+    virtual double get_react_damplus(const Single_Attack *single_attack, string react_type);
 
     friend void generate_gcsim_script(Config_File *config);
 
@@ -120,23 +130,21 @@ public:
 
 class Hutao : public Character
 {
-    //4、6命不建构：条件难触发
+    //1命不建构：不需要；4、6命不建构：条件难触发
 public:
     Hutao(int A_level, int E_level, int Q_level, int constellation);
 
     string get_attack_ele_type(const Single_Attack *single_attack) override;
 
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
     attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+    attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
-    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
-
-    attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
-
-    attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate) override;
+    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
 private:
     vector<pair<double, double>> get_E_time(const Single_Attack *single_attack);
@@ -150,13 +158,13 @@ public:
 
     string get_attack_ele_type(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 
-    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
 
-    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
-    attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate) override;
+    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
 private:
     vector<pair<int, double>> get_mirror_time(const Single_Attack *single_attack);
@@ -168,15 +176,13 @@ class Raiden : public Character
 public:
     Raiden(int A_level, int E_level, int Q_level, int constellation);
 
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
     attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
-
-    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
-
-    attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
+    attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
 private:
     vector<pair<double, double>> get_Q_time(const Single_Attack *single_attack);
@@ -190,11 +196,9 @@ public:
 
     string get_attack_ele_type(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 
-    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
-
-    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
 };
 
 class Ganyu : public Character
@@ -203,11 +207,9 @@ class Ganyu : public Character
 public:
     Ganyu(int A_level, int E_level, int Q_level, int constellation);
 
-    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 
-    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
-
-    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
 };
 
 class Nahida : public Character
@@ -216,15 +218,13 @@ class Nahida : public Character
 public:
     Nahida(int A_level, int E_level, int Q_level, int constellation);
 
-    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 
-    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
 
-    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
-    attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
-
-    attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate) override;
+    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 };
 
 class Yelan : public Character
@@ -233,13 +233,11 @@ class Yelan : public Character
 public:
     Yelan(int A_level, int E_level, int Q_level, int constellation);
 
-    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 
-    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
 
-    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
-
-    attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate) override;
+    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 };
 
 #endif //GENSHINCAL_CHARACTER_H

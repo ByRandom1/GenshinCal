@@ -38,7 +38,7 @@ struct Combination
 struct Attack_Config
 {
     Character *c_point;
-    string action;//release hit switch dash
+    string action;//switch release hit 组成 rotation
     string attack_way;
     int rate_pos;
     string react_type;
@@ -75,10 +75,10 @@ public:
     Team_Config *team_config;
     Attack_Config *attack_config;
     //get_data
-    int base_life;
-    int base_atk;
-    int base_def;
-    double base_skillrate;
+    int base_life = 0;
+    int base_atk = 0;
+    int base_def = 0;
+    double base_skillrate = 0;
     attribute_data<int> useful;
     attribute_data<double> percentage;
     mutable attribute_data<double> converted_percentage;
@@ -100,11 +100,11 @@ class Deployment
 public:
     vector<Single_Attack *> attack_list;
     //get_all_data
-    double min_recharge;
+    double min_recharge = 0;
     attribute_data<int> collected_useful;
     //cal_optimal_entry_num
     attribute_data<int> entry_num;
-    double total_damage;
+    double total_damage = 0;
 
     Deployment(Combination *self_, Team_Config *team_config_);
 

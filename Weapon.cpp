@@ -31,9 +31,9 @@ string Weapon::get_weapon_type()
 int Weapon::get_atk() const
 { return atk; }
 
-attribute_data<double> Weapon::get_break(const string &ele_type)
+attribute_data<double> Weapon::get_break(const Single_Attack *single_attack)
 {
-    if (ele_type != "物理")
+    if (single_attack->self->c_point->get_attack_ele_type(single_attack) != "物理")
     {
         attribute_data<double> result = break_value;
         result.data["伤害加成"] = 0.0;
@@ -42,23 +42,23 @@ attribute_data<double> Weapon::get_break(const string &ele_type)
     else return break_value;
 }
 
+void Weapon::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+{}
+
 attribute_data<int> Weapon::get_useful_attribute(const Single_Attack *single_attack)
 { return {}; }
 
-attribute_data<double> Weapon::get_extra(const Single_Attack *single_attack)
+attribute_data<double> Weapon::get_buff(const Single_Attack *single_attack)
 { return {}; }
 
-attribute_data<double> Weapon::get_team(const Single_Attack *other_single_attack)
+attribute_data<double> Weapon::get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 { return {}; }
 
-void Weapon::get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
-{}
-
-attribute_data<double> Weapon::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
+attribute_data<double> Weapon::get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 { return {}; }
 
-attribute_data<double> Weapon::get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate)
-{ return {}; }
+double Weapon::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
+{ return 0; }
 
-double Weapon::get_react_bonus(const Single_Attack *single_attack, string react_type)
+double Weapon::get_react_damplus(const Single_Attack *single_attack, string react_type)
 { return 0; }
