@@ -81,7 +81,7 @@ public:
     double base_skillrate;
     attribute_data<int> useful;
     attribute_data<double> percentage;
-    attribute_data<double> converted_percentage;
+    mutable attribute_data<double> converted_percentage;
 
     Single_Attack(Combination *self_,
                   Team_Config *team_config_,

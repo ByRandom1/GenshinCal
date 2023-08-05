@@ -93,8 +93,8 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
     base_def = self->c_point->get_def();
     base_skillrate = self->c_point->get_rate(attack_config->attack_way, attack_config->rate_pos);
     percentage = attribute_data(1.0, 1.0, 1.0, 0.0, 1.0, 0.05, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-                 + self->c_point->get_break(self->c_point->get_ele_type(this)) + self->c_point->get_extra(this)
-                 + self->w_point->get_break(self->c_point->get_ele_type(this)) + self->w_point->get_extra(this);
+                 + self->c_point->get_break(self->c_point->get_attack_ele_type(this)) + self->c_point->get_extra(this)
+                 + self->w_point->get_break(self->c_point->get_attack_ele_type(this)) + self->w_point->get_extra(this);
     if (self->suit1 == self->suit2)
     {
         suit1_valid = suit2_valid = judge_useful(useful, self->suit1->get_extra(this));
@@ -123,7 +123,7 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
     else if (self->a_main4 == "元素精通") percentage.data["元素精通"] += 187.0;
     else if (self->a_main4 == "伤害加成")
     {
-        if (self->c_point->get_ele_type(this) == "物理") percentage.data["伤害加成"] += 0.583;
+        if (self->c_point->get_attack_ele_type(this) == "物理") percentage.data["伤害加成"] += 0.583;
         else percentage.data["伤害加成"] += 0.466;
     }
     main5_valid = (useful.data[self->a_main5] > 0);
@@ -147,17 +147,18 @@ double Single_Attack::cal_damage(const attribute_data<double> &entry_value, doub
     attribute_data<double> panel = percentage + entry_value + attribute_data("暴击率", 0.08) + attribute_data("暴击伤害", 0.15);
     //get converted
     panel = panel + converted_percentage + self->c_point->get_convert(this, panel) + self->w_point->get_convert(this, panel) + self->suit1->get_convert(this, panel);//artifact only 4 piece
+    //get extra rate
+    double extra_rate = 0.0;
+    panel = panel + self->c_point->get_extra_convert_rate(this, panel, extra_rate) + self->w_point->get_extra_convert_rate(this, panel, extra_rate) + self->suit1->get_extra_convert_rate(this, panel, extra_rate);//artifact only 4 piece
     //check_recharge
     if (panel.data["元素充能效率"] < min_recharge) return -1;
-    //get extra rate
-    double extra_rate = self->c_point->get_extra_rate(this, panel) + self->w_point->get_extra_rate(this, panel) + self->suit1->get_extra_rate(this, panel);//artifact only 4 piece
     //get react
     double grow_rate = 1.0;
     double extra_damage = 0.0;
     get_react_value(panel.data["元素精通"], extra_rate, grow_rate, extra_damage);
     //get resist ratio
     double resistence_ratio;
-    if ("超导" <= attack_config->react_type && self->c_point->get_ele_type(this) == "物理") panel.data["抗性削弱"] += 0.4;//TODO:time_constrain
+    if ("超导" <= attack_config->react_type && self->c_point->get_attack_ele_type(this) == "物理") panel.data["抗性削弱"] += 0.4;//TODO:time_constrain
     if (0.1 - panel.data["抗性削弱"] >= 0.75) resistence_ratio = 1 / (4 * (0.1 - panel.data["抗性削弱"]) + 1);
     else if (0.1 - panel.data["抗性削弱"] < 0) resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]) / 2;
     else resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]);
@@ -216,8 +217,8 @@ void Single_Attack::get_react_value(double mastery, double &extra_rate, double &
     if ("激化" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "激化") + self->w_point->get_react_bonus(this, "激化") + self->suit1->get_react_bonus(this, "激化");
-        if (self->c_point->get_ele_type(this) == "草") extra_rate += 1447.0 * 1.25 * (1.0 + (5.0 * mastery) / (mastery + 1200.0) + extra_damplus);
-        else if (self->c_point->get_ele_type(this) == "雷") extra_rate += 1447.0 * 1.15 * (1.0 + (5.0 * mastery) / (mastery + 1200.0) + extra_damplus);
+        if (self->c_point->get_attack_ele_type(this) == "草") extra_rate += 1447.0 * 1.25 * (1.0 + (5.0 * mastery) / (mastery + 1200.0) + extra_damplus);
+        else if (self->c_point->get_attack_ele_type(this) == "雷") extra_rate += 1447.0 * 1.15 * (1.0 + (5.0 * mastery) / (mastery + 1200.0) + extra_damplus);
     }
     if ("燃烧" <= attack_config->react_type)
     {
@@ -229,14 +230,14 @@ void Single_Attack::get_react_value(double mastery, double &extra_rate, double &
     if ("蒸发" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "蒸发") + self->w_point->get_react_bonus(this, "蒸发") + self->suit1->get_react_bonus(this, "蒸发");
-        if (self->c_point->get_ele_type(this) == "火") grow_rate = 1.5 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
-        else if (self->c_point->get_ele_type(this) == "水") grow_rate = 2.0 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
+        if (self->c_point->get_attack_ele_type(this) == "火") grow_rate = 1.5 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
+        else if (self->c_point->get_attack_ele_type(this) == "水") grow_rate = 2.0 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
     }
     if ("融化" <= attack_config->react_type)
     {
         double extra_damplus = self->c_point->get_react_bonus(this, "融化") + self->w_point->get_react_bonus(this, "融化") + self->suit1->get_react_bonus(this, "融化");
-        if (self->c_point->get_ele_type(this) == "火") grow_rate = 2.0 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
-        else if (self->c_point->get_ele_type(this) == "冰") grow_rate = 1.5 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
+        if (self->c_point->get_attack_ele_type(this) == "火") grow_rate = 2.0 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
+        else if (self->c_point->get_attack_ele_type(this) == "冰") grow_rate = 1.5 * (1.0 + (25.0 * mastery) / (9.0 * (mastery + 1401.0)) + extra_damplus);
     }
     if ("冻结" <= attack_config->react_type)
     {

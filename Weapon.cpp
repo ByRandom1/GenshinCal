@@ -57,8 +57,8 @@ void Weapon::get_recharge_energy(const Single_Attack *single_attack, double &Q_e
 attribute_data<double> Weapon::get_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 { return {}; }
 
-double Weapon::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
-{ return 0; }
+attribute_data<double> Weapon::get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate)
+{ return {}; }
 
 double Weapon::get_react_bonus(const Single_Attack *single_attack, string react_type)
 { return 0; }

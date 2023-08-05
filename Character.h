@@ -19,13 +19,13 @@ class Character
 protected:
     string name;
     string english_name;
+    string ele_type;
     string weapon_type;
     int life;
     int atk;
     int def;
     attribute_data<double> break_value;
 
-    string ele_type;
     int A_level;
     attribute_data<int> A_useful_attributes;
     string normal_A_ele_type;
@@ -81,6 +81,8 @@ public:
 
     string get_name();
 
+    string get_character_ele_type();
+
     string get_weapon_type();
 
     int get_life() const;
@@ -93,7 +95,9 @@ public:
 
     attribute_data<double> get_break(const string &ele_type_);
 
-    virtual string get_ele_type(const Single_Attack *single_attack);
+    //TODO:函数遵循这样一种写作规范（for，触发者，接受者条件1，接受者条件n，时间约束，buff内容，break）每个各占一行
+
+    virtual string get_attack_ele_type(const Single_Attack *single_attack);
 
     virtual attribute_data<int> get_useful_attribute(const Single_Attack *single_attack);
 
@@ -105,7 +109,7 @@ public:
 
     virtual attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel);
 
-    virtual double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel);
+    virtual attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate);
 
     virtual double get_react_bonus(const Single_Attack *single_attack, string react_type);
 
@@ -120,7 +124,7 @@ class Hutao : public Character
 public:
     Hutao(int A_level, int E_level, int Q_level, int constellation);
 
-    string get_ele_type(const Single_Attack *single_attack) override;
+    string get_attack_ele_type(const Single_Attack *single_attack) override;
 
     attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
 
@@ -132,7 +136,7 @@ public:
 
     attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
-    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
+    attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate) override;
 
 private:
     vector<pair<double, double>> get_E_time(const Single_Attack *single_attack);
@@ -144,7 +148,7 @@ class Alhaitham : public Character
 public:
     Alhaitham(int A_level, int E_level, int Q_level, int constellation);
 
-    string get_ele_type(const Single_Attack *single_attack) override;
+    string get_attack_ele_type(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_extra(const Single_Attack *single_attack) override;
 
@@ -152,9 +156,7 @@ public:
 
     void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 
-    attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
-
-    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
+    attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate) override;
 
 private:
     vector<pair<int, double>> get_mirror_time(const Single_Attack *single_attack);
@@ -180,13 +182,13 @@ private:
     vector<pair<double, double>> get_Q_time(const Single_Attack *single_attack);
 };
 
-class Ayaka :public Character
+class Ayaka : public Character
 {
     //1命不建构：不需要；2命不建构：对单；6命不建构
 public:
     Ayaka(int A_level, int E_level, int Q_level, int constellation);
 
-    string get_ele_type(const Single_Attack *single_attack) override;
+    string get_attack_ele_type(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_extra(const Single_Attack *single_attack) override;
 
@@ -206,6 +208,38 @@ public:
     attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
 
     void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+};
+
+class Nahida : public Character
+{
+    //2命暴击不建构；6命不建构
+public:
+    Nahida(int A_level, int E_level, int Q_level, int constellation);
+
+    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+
+    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
+
+    attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate) override;
+};
+
+class Yelan : public Character
+{
+    //破局矢不建构；1命不建构：不需要；6命不建构
+public:
+    Yelan(int A_level, int E_level, int Q_level, int constellation);
+
+    attribute_data<double> get_extra(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_team(const Single_Attack *other_single_attack) override;
+
+    void get_recharge_energy(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate) override;
 };
 
 #endif //GENSHINCAL_CHARACTER_H

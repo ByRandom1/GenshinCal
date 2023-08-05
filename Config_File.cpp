@@ -28,11 +28,6 @@ map<string, string> get_params(const vector<string> &info, char with)
     return result;
 }
 
-bool compare_Attack_Config(Attack_Config *a, Attack_Config *b)
-{
-    return a->attack_time < b->attack_time;
-}
-
 Config_File::Config_File(string team_name_, vector<string> file)
 {
     team_name = std::move(team_name_);
@@ -102,7 +97,7 @@ Config_File::Config_File(string team_name_, vector<string> file)
         index++;
     }
 
-    stable_sort(total.begin(), total.end(), compare_Attack_Config);
+    stable_sort(total.begin(), total.end(), [](Attack_Config *a, Attack_Config *b) { return a->attack_time < b->attack_time; });
     team_config = new Team_Config(team[0], team[1], team[2], team[3], ele_attach_type, total, rotation_time);
 }
 

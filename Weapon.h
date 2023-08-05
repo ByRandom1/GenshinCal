@@ -48,7 +48,7 @@ public:
 
     virtual attribute_data<double> get_convert(const Single_Attack *single_attack, attribute_data<double> panel);
 
-    virtual double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel);
+    virtual attribute_data<double> get_extra_convert_rate(const Single_Attack *single_attack, attribute_data<double> panel, double &extra_rate);
 
     virtual double get_react_bonus(const Single_Attack *single_attack, string react_type);
 
