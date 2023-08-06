@@ -56,12 +56,12 @@ struct Team_Config
 {
 public:
     Combination *team[4];
-    string ele_attach_type;
+    string heal_or_shield;
     vector<Attack_Config *> rotation;
     double rotation_time;
 
     Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
-                string ele_attach_type_,
+                string heal_or_shield_,
                 vector<Attack_Config *> rotation_,
                 double rotation_time_);
 
@@ -92,6 +92,8 @@ public:
     double cal_damage(const attribute_data<double> &entry_value, double min_recharge) const;
 
 private:
+    attribute_data<double> get_team_bonus() const;
+
     void get_react_value(double mastery, double &extra_rate, double &grow_rate, double &extra_damage) const;
 };
 

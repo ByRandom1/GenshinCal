@@ -34,7 +34,7 @@ Config_File::Config_File(string team_name_, vector<string> file)
 
     Character *ch[4];
     Combination *team[4];
-    string ele_attach_type;
+    string heal_or_shield;
     vector<Attack_Config *> total;
     double rotation_time;
 
@@ -51,18 +51,21 @@ Config_File::Config_File(string team_name_, vector<string> file)
                 ch[2] = find_character_by_name(info[5]);
                 ch[3] = find_character_by_name(info[6]);
             }
-            else if (info[2] == "options") options = info[3];
-            else if (info[2] == "target") target = info[3];
+            else if (info[2] == "options")
+            {
+                for (int i = 3; i < info.size(); ++i)
+                    options = options + " " + info[i];
+                rotation_time = stod(get_params(info, '=')["duration"]) / 5;
+            }
+            else if (info[2] == "target")
+            {
+                for (int i = 3; i < info.size(); ++i)
+                    target = target + " " + info[i];
+            }
             else if (info[2] == "attack_script")
             {
                 while (file[++index] != "ATTACK_SCRIPT END")
                     attack_script.push_back(file[index]);
-            }
-            else if (info[2] == "team_config")
-            {
-                map<string, string> params = get_params(info, '=');
-                ele_attach_type = params["ele_attach_type"];
-                rotation_time = stod(params["rotation_time"]);
             }
         }
         else
@@ -85,6 +88,7 @@ Config_File::Config_File(string team_name_, vector<string> file)
                     map<string, string> params = get_params(info, '=');
                     team[pos] = new Combination(ch[pos], find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]),
                                                 find_artifact_by_name(params["suit2"]), "", "", "");
+                    heal_or_shield = ("heal" <= params["heal_or_shield"] ? string("heal") : "") + ("shield" <= params["heal_or_shield"] ? string("shield") : "");
                 }
                 else if (info[2] == "attack_config")
                 {
@@ -97,8 +101,9 @@ Config_File::Config_File(string team_name_, vector<string> file)
         index++;
     }
 
-    stable_sort(total.begin(), total.end(), [](Attack_Config *a, Attack_Config *b) { return a->attack_time < b->attack_time; });
-    team_config = new Team_Config(team[0], team[1], team[2], team[3], ele_attach_type, total, rotation_time);
+    stable_sort(total.begin(), total.end(), [](Attack_Config *a, Attack_Config *b)
+    { return a->attack_time < b->attack_time; });
+    team_config = new Team_Config(team[0], team[1], team[2], team[3], heal_or_shield, total, rotation_time);
 }
 
 Config_File::~Config_File()
@@ -127,11 +132,10 @@ string Config_File::generate_sample_config()
     result += "rotation_end\n";
     result += "ATTACK_SCRIPT END\n";
     result += "\n";
-    result += "all add team_config ele_attach_type= rotation_time=\n";
-    result += "A add team_combination weapon= suit1= suit2=\n";
-    result += "B add team_combination weapon= suit1= suit2=\n";
-    result += "C add team_combination weapon= suit1= suit2=\n";
-    result += "D add team_combination weapon= suit1= suit2=\n";
+    result += "A add team_combination weapon= suit1= suit2= heal_or_shield=\n";
+    result += "B add team_combination weapon= suit1= suit2= heal_or_shield=\n";
+    result += "C add team_combination weapon= suit1= suit2= heal_or_shield=\n";
+    result += "D add team_combination weapon= suit1= suit2= heal_or_shield=\n";
     result += "A/B/C/D add attack_config action= attack_way= rate_pos= react_type= attack_time=";
     return result;
 }

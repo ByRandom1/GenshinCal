@@ -55,4 +55,6 @@ public:
     friend void generate_gcsim_script(Config_File *config);
 };
 
+//SAMPLE:原则上不构建不带有辅助功能的4星武器
+
 #endif //GENSHINCAL_WEAPON_H

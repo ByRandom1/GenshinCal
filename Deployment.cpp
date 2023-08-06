@@ -39,7 +39,7 @@ Attack_Config::Attack_Config(Character *c_point_,
 }
 
 Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
-                         string ele_attach_type_,
+                         string heal_or_shield_,
                          vector<Attack_Config *> rotation_,
                          double rotation_time_)
 {
@@ -47,7 +47,7 @@ Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Comb
     team[1] = c2;
     team[2] = c3;
     team[3] = c4;
-    ele_attach_type = std::move(ele_attach_type_);
+    heal_or_shield = std::move(heal_or_shield_);
     rotation = std::move(rotation_);
     rotation_time = rotation_time_;
 }
@@ -137,11 +137,12 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
     for (auto &i: team_config->team)
         if (i->c_point != self->c_point)
             percentage = percentage + i->c_point->get_buff(this) + i->w_point->get_buff(this) + i->suit1->get_buff(this);
-    //TODO:元素共鸣
+    percentage = percentage + get_team_bonus();
 }
 
 double Single_Attack::cal_damage(const attribute_data<double> &entry_value, double min_recharge) const
 {
+    //TODO:部分增伤并没有添加在面板上却参与了转化，目前没有增伤转别的：将所有添加的属性分为percentage,converted_percentage,monster_percentage
     attribute_data<double> panel = percentage + entry_value + attribute_data("暴击率", 0.08) + attribute_data("暴击伤害", 0.15);
     //get panel convert
     panel = panel + converted_percentage + self->c_point->get_panel_convert(this, panel) + self->w_point->get_panel_convert(this, panel) + self->suit1->get_panel_convert(this, panel);
@@ -155,9 +156,17 @@ double Single_Attack::cal_damage(const attribute_data<double> &entry_value, doub
     double grow_rate = 1.0;
     double extra_damage = 0.0;
     get_react_value(panel.data["元素精通"], extra_rate, grow_rate, extra_damage);
+    for (auto i: team_config->rotation)
+        if (i->action == "hit" && "超导" <= i->react_type)
+            if (attack_config->action == "hit" &&
+                check_time_constrain(i->attack_time, i->attack_time + 12, attack_config->attack_time, team_config->rotation_time) &&
+                attack_config->c_point->get_attack_ele_type(this) == "物理")
+            {
+                panel = panel + attribute_data("抗性削弱", 0.4);
+                break;
+            }
     //get resist ratio
     double resistence_ratio;
-    if ("超导" <= attack_config->react_type && self->c_point->get_attack_ele_type(this) == "物理") panel.data["抗性削弱"] += 0.4;//TODO:time_constrain
     if (0.1 - panel.data["抗性削弱"] >= 0.75) resistence_ratio = 1 / (4 * (0.1 - panel.data["抗性削弱"]) + 1);
     else if (0.1 - panel.data["抗性削弱"] < 0) resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]) / 2;
     else resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]);
@@ -170,6 +179,65 @@ double Single_Attack::cal_damage(const attribute_data<double> &entry_value, doub
     if (panel.data["暴击率"] < 0.0) panel.data["暴击率"] = 0.0;
 
     return ((double) base_atk * panel.data["攻击力"] * base_skillrate + extra_rate) * panel.data["伤害加成"] * (1.0 + panel.data["暴击率"] * panel.data["暴击伤害"]) * grow_rate * resistence_ratio * defence_ratio + extra_damage;
+}
+
+attribute_data<double> Single_Attack::get_team_bonus() const
+{
+    attribute_data<double> result;
+
+    map<string, int> team_ele_num;
+    team_ele_num["水"] = 0;
+    team_ele_num["火"] = 0;
+    team_ele_num["雷"] = 0;
+    team_ele_num["冰"] = 0;
+    team_ele_num["风"] = 0;
+    team_ele_num["岩"] = 0;
+    team_ele_num["草"] = 0;
+
+    for (auto &i: team_config->team)
+        if (team_ele_num.find(i->c_point->get_ele_type()) != team_ele_num.end())
+            team_ele_num[i->c_point->get_ele_type()] += 1;
+
+    if (team_ele_num["水"] >= 2) result = result + attribute_data("生命值", 0.25);
+    if (team_ele_num["火"] >= 2) result = result + attribute_data("攻击力", 0.25);
+    if (team_ele_num["冰"] >= 2)
+    {
+        bool has_ice = ((team_ele_num["火"] == 0) && (team_ele_num["雷"] < team_ele_num["冰"]));//TODO:更精准的判断元素附着
+        if (has_ice) result = result + attribute_data("暴击率", 0.15);
+    }
+    if (team_ele_num["岩"] >= 2)
+    {
+        result = result + attribute_data("护盾强效", 0.15);
+        if ("shield" <= team_config->heal_or_shield)
+        {
+            result = result + attribute_data("伤害加成", 0.15);
+            if (attack_config->action == "hit" &&
+                attack_config->c_point->get_attack_ele_type(this) == "岩")
+                result = result + attribute_data("抗性削弱", 0.2);
+        }
+    }
+    if (team_ele_num["草"] >= 2)
+    {
+        result = result + attribute_data("元素精通", 50.0);
+        for (auto i: team_config->rotation)
+            if (i->action == "hit" && ("燃烧" <= i->react_type || "激化" <= i->react_type || "绽放" <= i->react_type))
+                if (attack_config->action == "hit" &&
+                    check_time_constrain(i->attack_time, i->attack_time + 6, attack_config->attack_time, team_config->rotation_time))
+                {
+                    result = result + attribute_data("元素精通", 30.0);
+                    break;
+                }
+        for (auto i: team_config->rotation)
+            if (i->action == "hit" && ("超激化" <= i->react_type || "蔓激化" <= i->react_type || "超绽放" <= i->react_type || "烈绽放" <= i->react_type))
+                if (attack_config->action == "hit" &&
+                    check_time_constrain(i->attack_time, i->attack_time + 6, attack_config->attack_time, team_config->rotation_time))
+                {
+                    result = result + attribute_data("元素精通", 20.0);
+                    break;
+                }
+    }
+
+    return result;
 }
 
 void Single_Attack::get_react_value(double mastery, double &extra_rate, double &grow_rate, double &extra_damage) const
@@ -189,28 +257,27 @@ void Single_Attack::get_react_value(double mastery, double &extra_rate, double &
     }
     if ("绽放" <= attack_config->react_type)
     {
-        //TODO:绽放
-//        if ("烈绽放" <= react_type)
-//        {
-//            double extra_damplus = self->c_point->get_react_damplus(this, "烈绽放") + self->w_point->get_react_damplus(this, "烈绽放") + self->suit1->get_react_damplus(this, "烈绽放");
-//            extra_damage += 6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
-//            //6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
-//            //草伤，吃草抗
-//        }
-//        else if ("超绽放" <= react_type)
-//        {
-//            double extra_damplus = self->c_point->get_react_damplus(this, "超绽放") + self->w_point->get_react_damplus(this, "超绽放") + self->suit1->get_react_damplus(this, "超绽放");
-//            extra_damage += 6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
-//            //6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
-//            //草伤，吃草抗
-//        }
-//        else
-//        {
-//            double extra_damplus = self->c_point->get_react_damplus(this, "绽放") + self->w_point->get_react_damplus(this, "绽放") + self->suit1->get_react_damplus(this, "绽放");
-//            extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
-//            //4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
-//            //草伤，吃草抗
-//        }
+        if ("烈绽放" <= attack_config->react_type)
+        {
+            double extra_damplus = self->c_point->get_react_damplus(this, "烈绽放") + self->w_point->get_react_damplus(this, "烈绽放") + self->suit1->get_react_damplus(this, "烈绽放");
+            extra_damage += 6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
+            //6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
+            //草伤，吃草抗
+        }
+        else if ("超绽放" <= attack_config->react_type)
+        {
+            double extra_damplus = self->c_point->get_react_damplus(this, "超绽放") + self->w_point->get_react_damplus(this, "超绽放") + self->suit1->get_react_damplus(this, "超绽放");
+            extra_damage += 6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
+            //6.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
+            //草伤，吃草抗
+        }
+        else
+        {
+            double extra_damplus = self->c_point->get_react_damplus(this, "绽放") + self->w_point->get_react_damplus(this, "绽放") + self->suit1->get_react_damplus(this, "绽放");
+            extra_damage += 4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + extra_damplus);// * ((team_config->teammate_all.find("纳西妲", react_type)) ? 1.2 : 1);
+            //4.0 * 723.4 * (1.0 + (16.0 * mastery) / (mastery + 2000.0) + 如雷/魔女等) * resistance;
+            //草伤，吃草抗
+        }
     }
     if ("激化" <= attack_config->react_type)
     {
@@ -322,6 +389,7 @@ int Deployment::get_all_data()
         main3_valid = main3_valid || main3_valid_;
         main4_valid = main4_valid || main4_valid_;
         main5_valid = main5_valid || main5_valid_;
+        collected_useful = collected_useful + i->useful;
     }
 
     //valid check
@@ -330,11 +398,7 @@ int Deployment::get_all_data()
     else if (!main3_valid) return 3;
     else if (!main4_valid) return 4;
     else if (!main5_valid) return 5;
-
-    //collect useful
-    for (auto &i: attack_list) collected_useful = collected_useful + i->useful;
-
-    return 0;
+    else return 0;
 }
 
 void Deployment::cal_optimal_entry_num()

@@ -174,7 +174,7 @@ class Raiden : public Character
 {
     //天赋1、1命不建构：默认满层愿力；6命不建构
 public:
-    Raiden(int A_level, int E_level, int Q_level, int constellation);
+    Raiden(int A_level, int E_level, int Q_level, int constellation, double typical_recharge_);
 
     void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 
@@ -185,6 +185,8 @@ public:
     attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
 private:
+    double typical_recharge;
+
     vector<pair<double, double>> get_Q_time(const Single_Attack *single_attack);
 };
 
@@ -216,7 +218,7 @@ class Nahida : public Character
 {
     //2命暴击不建构；6命不建构
 public:
-    Nahida(int A_level, int E_level, int Q_level, int constellation);
+    Nahida(int A_level, int E_level, int Q_level, int constellation, double typical_max_mastery_);
 
     void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
 
@@ -225,6 +227,9 @@ public:
     attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
     double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
+
+private:
+    double typical_max_mastery;
 };
 
 class Yelan : public Character
@@ -239,5 +244,128 @@ public:
 
     double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 };
+
+class Yaemiko : public Character
+{
+public:
+    Yaemiko(int A_level, int E_level, int Q_level, int constellation);
+
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
+};
+
+class Xiangling : public Character
+{
+    //天赋1、2不建构；2命不建构
+public:
+    Xiangling(int A_level, int E_level, int Q_level, int constellation);
+
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+};
+
+class Xingqiu : public Character
+{
+public:
+    Xingqiu(int A_level, int E_level, int Q_level, int constellation);
+
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+
+    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
+};
+
+class Zhongli : public Character
+{
+    //天赋1和所有命座均不建构
+public:
+    Zhongli(int A_level, int E_level, int Q_level, int constellation);
+
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+
+    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
+};
+
+class Kazuha : public Character
+{
+    //附加元素伤害不考虑；4命不建构
+public:
+    Kazuha(int A_level, int E_level, int Q_level, int constellation, double typical_mastery_);
+
+    string get_attack_ele_type(const Single_Attack *single_attack) override;
+
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
+
+private:
+    double typical_mastery;
+};
+
+class Mona : public Character
+{
+    //6命不建构
+public:
+    Mona(int A_level, int E_level, int Q_level, int constellation);
+
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+
+    attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
+
+    double get_react_damplus(const Single_Attack *single_attack, string react_type) override;
+
+private:
+    vector<pair<double, double>> get_Q_time(const Single_Attack *single_attack);
+};
+
+class Bennett : public Character
+{
+    //2、4命不建构，默认1命以上
+public:
+    Bennett(int A_level, int E_level, int Q_level, int constellation, double typical_atk_);
+
+    string get_attack_ele_type(const Single_Attack *single_attack) override;
+
+    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+
+    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+
+private:
+    double typical_atk;
+};
+
+//SAMPLE:原则上不构建除了点秋香之外的4星角色
+//class A : public Character
+//{
+//public:
+//    A(int A_level, int E_level, int Q_level, int constellation);
+//
+//    string get_attack_ele_type(const Single_Attack *single_attack) override;
+//
+//    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+//
+//    attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
+//
+//    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+//
+//    attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
+//
+//    attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
+//
+//    double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
+//};
 
 #endif //GENSHINCAL_CHARACTER_H

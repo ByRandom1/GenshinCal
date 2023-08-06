@@ -39,4 +39,6 @@ public:
     friend void generate_gcsim_script(Config_File *config);
 };
 
+//SAMPLE:构建所有圣遗物
+
 #endif //GENSHINCAL_ARTIFACT_H
