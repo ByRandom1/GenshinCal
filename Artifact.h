@@ -13,10 +13,11 @@ class Config_File;
 
 class Artifact
 {
-public:
+private:
     string name;
     string english_name;
 
+public:
     Artifact(string name_,
              string english_name_);
 

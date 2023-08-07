@@ -54,7 +54,6 @@ struct Attack_Config
 
 struct Team_Config
 {
-public:
     Combination *team[4];
     string heal_or_shield;
     vector<Attack_Config *> rotation;

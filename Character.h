@@ -16,7 +16,7 @@ class Config_File;
 class Character
 {
     //static data (unconditional)
-protected:
+private:
     string name;
     string english_name;
     string ele_type;
@@ -26,7 +26,6 @@ protected:
     int def;
     attribute_data<double> break_value;
 
-    int A_level;
     attribute_data<int> A_useful_attributes;
     string normal_A_ele_type;
     vector<vector<double>> normal_A;
@@ -34,19 +33,23 @@ protected:
     vector<vector<double>> heavy_A;
     string down_A_ele_type;
     vector<vector<double>> down_A;
-    int E_level;
     double E_energy;
     bool E_lockface;
     attribute_data<int> E_useful_attributes;
     string E_ele_type;
     vector<vector<double>> E;
-    int Q_level;
     double Q_energy;
     bool Q_lockface;
     attribute_data<int> Q_useful_attributes;
     string Q_ele_type;
     vector<vector<double>> Q;
+
+protected:
+    int A_level;
+    int E_level;
+    int Q_level;
     int constellation;
+    //TODO:lockface的处理
 
 public:
     Character(string name_,
@@ -93,22 +96,24 @@ public:
 
     double get_rate(const string &attack_way, int pos);
 
-    attribute_data<double> get_break(const Single_Attack *single_attack);
+    attribute_data<double> get_break(string ele_type_);
 
     virtual string get_attack_ele_type(const Single_Attack *single_attack);
 
     /*
         buff遵循这样一种写作规范
-        for (可能的触发者)
-            if (触发者条件：写在一行)
-                if (检查接受Attack_Config的每一个条件：一个条件写一行；
-                    检查额外的条件：元素，层数限制，cd限制等，一个条件写一行)
-                {
-                    result = result + attribute_data(buff内容);
-                    break;
-                }
+        if (constellation >= ?)
+            for (可能的触发者)
+                if (触发者条件：写在一行)
+                    if (检查接受Attack_Config的每一个条件：一个条件写一行；
+                        检查额外的条件：元素，层数限制，cd限制等，一个条件写一行)
+                    {
+                        result = result + attribute_data(buff内容);
+                        break;
+                    }
     */
 
+    //TODO:带有CD限制的能量产生会受上一循环影响，这里忽略
     virtual void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy);
 
     virtual attribute_data<int> get_useful_attribute(const Single_Attack *single_attack);
@@ -130,7 +135,7 @@ public:
 
 class Hutao : public Character
 {
-    //1命不建构：不需要；4、6命不建构：条件难触发
+    //1、4、6命不建构；Q倍率为高生命、低生命
 public:
     Hutao(int A_level, int E_level, int Q_level, int constellation);
 
@@ -152,7 +157,7 @@ private:
 
 class Alhaitham : public Character
 {
-    //1命不建构：不需要
+    //1命不建构；E倍率为释放、1层镜、2层镜、3层镜
 public:
     Alhaitham(int A_level, int E_level, int Q_level, int constellation);
 
@@ -172,13 +177,11 @@ private:
 
 class Raiden : public Character
 {
-    //天赋1、1命不建构：默认满层愿力；6命不建构
+    //天赋1、1命不建构；6命不建构；E倍率为释放、后续攻击；Q倍率为释放、平A、重A、下落A：默认满层愿力
 public:
     Raiden(int A_level, int E_level, int Q_level, int constellation, double typical_recharge_);
 
     void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
-
-    attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_buff(const Single_Attack *single_attack) override;
 
@@ -192,7 +195,7 @@ private:
 
 class Ayaka : public Character
 {
-    //1命不建构：不需要；2命不建构：对单；6命不建构
+    //1、2、6命不建构；Q倍率为切割、绽放
 public:
     Ayaka(int A_level, int E_level, int Q_level, int constellation);
 
@@ -205,7 +208,7 @@ public:
 
 class Ganyu : public Character
 {
-    //2命不建构：不需要；6命不建构
+    //2、6命不建构；重A倍率为重A1段、重A2段
 public:
     Ganyu(int A_level, int E_level, int Q_level, int constellation);
 
@@ -216,7 +219,7 @@ public:
 
 class Nahida : public Character
 {
-    //2命暴击不建构；6命不建构
+    //2命暴击不建构；6命不建构；E倍率为短按、长按、后续攻击
 public:
     Nahida(int A_level, int E_level, int Q_level, int constellation, double typical_max_mastery_);
 
@@ -234,7 +237,7 @@ private:
 
 class Yelan : public Character
 {
-    //破局矢不建构；1命不建构：不需要；6命不建构
+    //破局矢不建构；1、6命不建构；Q倍率为释放、后续攻击、2命攻击
 public:
     Yelan(int A_level, int E_level, int Q_level, int constellation);
 
@@ -247,6 +250,7 @@ public:
 
 class Yaemiko : public Character
 {
+    //E倍率为一阶、二阶、三阶、4阶，Q倍率为释放、后续伤害
 public:
     Yaemiko(int A_level, int E_level, int Q_level, int constellation);
 
@@ -259,7 +263,7 @@ public:
 
 class Xiangling : public Character
 {
-    //天赋1、2不建构；2命不建构
+    //天赋1、2、2命不建构；Q倍率为一段、二段、三段、后续伤害
 public:
     Xiangling(int A_level, int E_level, int Q_level, int constellation);
 
@@ -270,6 +274,7 @@ public:
 
 class Xingqiu : public Character
 {
+    //天赋1、1命不建构；E倍率为一段、二段
 public:
     Xingqiu(int A_level, int E_level, int Q_level, int constellation);
 
@@ -282,7 +287,7 @@ public:
 
 class Zhongli : public Character
 {
-    //天赋1和所有命座均不建构
+    //天赋1和所有命座均不建构；E倍率为释放、岩脊伤害、共鸣伤害
 public:
     Zhongli(int A_level, int E_level, int Q_level, int constellation);
 
@@ -295,7 +300,7 @@ public:
 
 class Kazuha : public Character
 {
-    //附加元素伤害不考虑；4命不建构
+    //Q、天赋1附加元素伤害不考虑；1、4命不建构；E倍率为点按、长按；Q倍率为释放、后续伤害
 public:
     Kazuha(int A_level, int E_level, int Q_level, int constellation, double typical_mastery_);
 
@@ -315,7 +320,7 @@ private:
 
 class Mona : public Character
 {
-    //6命不建构
+    //天赋1、2命、6命不建构；E倍率为持续伤害、破裂
 public:
     Mona(int A_level, int E_level, int Q_level, int constellation);
 
@@ -333,7 +338,7 @@ private:
 
 class Bennett : public Character
 {
-    //2、4命不建构，默认1命以上
+    //2、4命不建构，默认没有血量限制；E倍率为不蓄力、一段蓄力一段、一段蓄力二段、二段蓄力一段、二段蓄力二段、二段蓄力三段
 public:
     Bennett(int A_level, int E_level, int Q_level, int constellation, double typical_atk_);
 

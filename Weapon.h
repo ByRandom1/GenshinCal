@@ -14,12 +14,14 @@ class Config_File;
 class Weapon
 {
     //static data (unconditional)
-protected:
+private:
     string name;
     string english_name;
     string weapon_type;
     int atk;
     attribute_data<double> break_value;
+
+protected:
     int level;
 
 public:
@@ -36,7 +38,7 @@ public:
 
     int get_atk() const;
 
-    attribute_data<double> get_break(const Single_Attack *single_attack);
+    attribute_data<double> get_break(const string& ele_type);
 
     virtual void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy);
 

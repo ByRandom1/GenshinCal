@@ -74,19 +74,19 @@ public:
 
     attribute_data &operator=(const attribute_data &other)
     {
-        this->data.at("生命值") = other.data.at("生命值");
-        this->data.at("攻击力") = other.data.at("攻击力");
-        this->data.at("防御力") = other.data.at("防御力");
-        this->data.at("元素精通") = other.data.at("元素精通");
-        this->data.at("元素充能效率") = other.data.at("元素充能效率");
-        this->data.at("暴击率") = other.data.at("暴击率");
-        this->data.at("暴击伤害") = other.data.at("暴击伤害");
-        this->data.at("伤害加成") = other.data.at("伤害加成");
-        this->data.at("抗性削弱") = other.data.at("抗性削弱");
-        this->data.at("防御削弱") = other.data.at("防御削弱");
-        this->data.at("防御无视") = other.data.at("防御无视");
-        this->data.at("治疗加成") = other.data.at("治疗加成");
-        this->data.at("护盾强效") = other.data.at("护盾强效");
+        this->data["生命值"] = other.data.at("生命值");
+        this->data["攻击力"] = other.data.at("攻击力");
+        this->data["防御力"] = other.data.at("防御力");
+        this->data["元素精通"] = other.data.at("元素精通");
+        this->data["元素充能效率"] = other.data.at("元素充能效率");
+        this->data["暴击率"] = other.data.at("暴击率");
+        this->data["暴击伤害"] = other.data.at("暴击伤害");
+        this->data["伤害加成"] = other.data.at("伤害加成");
+        this->data["抗性削弱"] = other.data.at("抗性削弱");
+        this->data["防御削弱"] = other.data.at("防御削弱");
+        this->data["防御无视"] = other.data.at("防御无视");
+        this->data["治疗加成"] = other.data.at("治疗加成");
+        this->data["护盾强效"] = other.data.at("护盾强效");
         return *this;
     }
 
@@ -110,13 +110,12 @@ public:
 
 bool operator<=(const string &inf, const string &target);
 
-//front + constrain > back
 bool check_time_constrain(double buff_start, double buff_end, double attack_time, double rotation_time);
 
 class Character;
 
 class Team_Config;
 
-Character *get_front(const Team_Config* team_config, double time_point);
+Character *get_front(const Team_Config *team_config, double time_point);
 
 #endif //GENSHINCAL_BASIC_ELEMENTS_H

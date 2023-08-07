@@ -91,8 +91,8 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
     base_def = self->c_point->get_def();
     base_skillrate = self->c_point->get_rate(attack_config->attack_way, attack_config->rate_pos);
     percentage = attribute_data(1.0, 1.0, 1.0, 0.0, 1.0, 0.05, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-                 + self->c_point->get_break(this) + self->c_point->get_buff(this)
-                 + self->w_point->get_break(this) + self->w_point->get_buff(this);
+                 + self->c_point->get_break(self->c_point->get_attack_ele_type(this)) + self->c_point->get_buff(this)
+                 + self->w_point->get_break(self->c_point->get_attack_ele_type(this)) + self->w_point->get_buff(this);
     if (self->suit1 == self->suit2)
     {
         suit1_valid = suit2_valid = judge_useful(useful, self->suit1->get_buff(this));
@@ -136,7 +136,11 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
     //get team
     for (auto &i: team_config->team)
         if (i->c_point != self->c_point)
-            percentage = percentage + i->c_point->get_buff(this) + i->w_point->get_buff(this) + i->suit1->get_buff(this);
+        {
+            percentage = percentage + i->c_point->get_buff(this);
+            if (i->w_point != nullptr) percentage = percentage + i->w_point->get_buff(this);
+            if (i->suit1 != nullptr) percentage = percentage + i->suit1->get_buff(this);
+        }
     percentage = percentage + get_team_bonus();
 }
 
@@ -194,9 +198,7 @@ attribute_data<double> Single_Attack::get_team_bonus() const
     team_ele_num["岩"] = 0;
     team_ele_num["草"] = 0;
 
-    for (auto &i: team_config->team)
-        if (team_ele_num.find(i->c_point->get_ele_type()) != team_ele_num.end())
-            team_ele_num[i->c_point->get_ele_type()] += 1;
+    for (auto &i: team_config->team) team_ele_num[i->c_point->get_ele_type()] += 1;
 
     if (team_ele_num["水"] >= 2) result = result + attribute_data("生命值", 0.25);
     if (team_ele_num["火"] >= 2) result = result + attribute_data("攻击力", 0.25);
@@ -349,24 +351,17 @@ Deployment::~Deployment()
 int Deployment::get_all_data()
 {
     //cal recharge
-    for (auto i: attack_list[0]->team_config->rotation)
-        if (i->c_point == attack_list[0]->self->c_point && i->attack_way == "Q")
-        {
-            double Q_energy_modify = 0.0;
-            double energy = 10.0;
-            attack_list[0]->self->c_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-            attack_list[0]->self->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-            attack_list[0]->self->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
-            for (auto &j: attack_list[0]->team_config->team)
-                if (j->c_point != attack_list[0]->self->c_point)
-                {
-                    j->c_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-                    j->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-                    j->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
-                }
-            min_recharge = max(Q_energy_modify / energy, 0.0);
-            break;
-        }
+    double Q_energy_modify = 0.0;
+    double energy = attack_list[0]->team_config->rotation_time / 2;
+    for (auto &i: attack_list[0]->team_config->team)
+    {
+        i->c_point->get_recharge(attack_list[0], Q_energy_modify, energy);
+        if (i->c_point != attack_list[0]->self->c_point && i->w_point != nullptr) i->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
+        else if (i->c_point == attack_list[0]->self->c_point) attack_list[0]->self->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
+        if (i->c_point != attack_list[0]->self->c_point && i->suit1 != nullptr) i->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
+        else if (i->c_point == attack_list[0]->self->c_point) attack_list[0]->self->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
+    }
+    min_recharge = max(Q_energy_modify / energy, 0.0);
 
     bool suit1_valid = false;
     bool suit2_valid = false;

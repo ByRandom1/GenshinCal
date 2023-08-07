@@ -34,7 +34,8 @@ Config_File::Config_File(string team_name_, vector<string> file)
 
     Character *ch[4];
     Combination *team[4];
-    string heal_or_shield;
+    bool heal = false;
+    bool shield = false;
     vector<Attack_Config *> total;
     double rotation_time;
 
@@ -86,24 +87,22 @@ Config_File::Config_File(string team_name_, vector<string> file)
                 else if (info[2] == "team_combination")
                 {
                     map<string, string> params = get_params(info, '=');
-                    team[pos] = new Combination(ch[pos], find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]),
-                                                find_artifact_by_name(params["suit2"]), "", "", "");
-                    heal_or_shield = ("heal" <= params["heal_or_shield"] ? string("heal") : "") + ("shield" <= params["heal_or_shield"] ? string("shield") : "");
+                    team[pos] = new Combination(ch[pos], find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]), find_artifact_by_name(params["suit2"]), "", "", "");
+                    heal = heal || ("heal" <= params["heal_or_shield"]);
+                    shield = shield || ("shield" <= params["heal_or_shield"]);
                 }
                 else if (info[2] == "attack_config")
                 {
                     map<string, string> params = get_params(info, '=');
-                    total.push_back(new Attack_Config(ch[pos], params["action"], params["attack_way"], stoi(params["rate_pos"]),
-                                                      params["react_type"], stod(params["attack_time"])));
+                    total.push_back(new Attack_Config(ch[pos], params["action"], params["attack_way"], stoi(params["rate_pos"]), params["react_type"], stod(params["attack_time"])));
                 }
             }
         }
         index++;
     }
 
-    stable_sort(total.begin(), total.end(), [](Attack_Config *a, Attack_Config *b)
-    { return a->attack_time < b->attack_time; });
-    team_config = new Team_Config(team[0], team[1], team[2], team[3], heal_or_shield, total, rotation_time);
+    stable_sort(total.begin(), total.end(), [](Attack_Config *a, Attack_Config *b) { return a->attack_time < b->attack_time; });
+    team_config = new Team_Config(team[0], team[1], team[2], team[3], (heal ? string("heal") : "") + (shield ? string("shield") : ""), total, rotation_time);
 }
 
 Config_File::~Config_File()

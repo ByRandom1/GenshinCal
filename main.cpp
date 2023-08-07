@@ -365,13 +365,13 @@ void cal_optimal_combination(Config_File *config)
                 NEXTARTIFACT1:;
             }
 
+            //TODO:设定线程池，规定最大线程数
             for (auto &th: ths) th.join();
             chrono::duration<double> time = chrono::system_clock::now() - start;
 
             if (!c_w_pair.empty())
             {
-                stable_sort(c_w_pair.begin(), c_w_pair.end(), [](Deployment *a, Deployment *b)
-                { return a->total_damage > b->total_damage; });
+                stable_sort(c_w_pair.begin(), c_w_pair.end(), [](Deployment *a, Deployment *b) { return a->total_damage > b->total_damage; });
                 double optimal_damage = c_w_pair[0]->total_damage;
                 for (auto &c_w: c_w_pair)
                     if (c_w->total_damage / optimal_damage >= out_filter_percentage) out.push_back(c_w);
@@ -385,8 +385,7 @@ void cal_optimal_combination(Config_File *config)
 
         if (!out.empty())
         {
-            stable_sort(out.begin(), out.end(), [](Deployment *a, Deployment *b)
-            { return a->total_damage > b->total_damage; });
+            stable_sort(out.begin(), out.end(), [](Deployment *a, Deployment *b) { return a->total_damage > b->total_damage; });
             double total_damage_baseline = out[0]->total_damage;
             for (auto &d: out)
             {

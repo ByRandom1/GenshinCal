@@ -31,9 +31,9 @@ string Weapon::get_weapon_type()
 int Weapon::get_atk() const
 { return atk; }
 
-attribute_data<double> Weapon::get_break(const Single_Attack *single_attack)
+attribute_data<double> Weapon::get_break(const string& ele_type)
 {
-    if (single_attack->self->c_point->get_attack_ele_type(single_attack) != "物理")
+    if (ele_type != "物理")
     {
         attribute_data<double> result = break_value;
         result.data["伤害加成"] = 0.0;
