@@ -129,17 +129,10 @@ double Character::get_rate(const string &attack_way, int pos)
     else return 0;
 }
 
-attribute_data<double> Character::get_break(const string &ele_type_)
+attribute_data<double> Character::get_break(const string& ele_type_)
 {
     if (ele_type != ele_type_) return break_value + attribute_data("伤害加成", -break_value.get("伤害加成"));
     else return break_value;
-}
-
-bool Character::get_attack_lock_face(const string &attack_way_)
-{
-    if (attack_way_ == "E") return E_lockface;
-    else if (attack_way_ == "Q") return Q_lockface;
-    else return false;
 }
 
 string Character::get_attack_ele_type(const Single_Attack *single_attack)
@@ -985,8 +978,7 @@ attribute_data<double> Nahida::get_buff(const Single_Attack *single_attack)
                 single_attack->attack_config->action == "hit" &&
                 check_time_constrain(i->attack_time + 2, i->attack_time + 17 + Q_extend_time, single_attack->attack_config->attack_time, single_attack->team_config->rotation_time))
             {
-                //TODO:不允许二次转化
-                //single_attack->converted_percentage = single_attack->converted_percentage + attribute_data("元素精通", min(250.0, 0.25 * typical_max_mastery));
+                single_attack->converted_percentage = single_attack->converted_percentage + attribute_data("元素精通", min(250.0, 0.25 * typical_max_mastery));
                 break;
             }
     //constellation 2
@@ -1522,8 +1514,7 @@ attribute_data<double> Kazuha::get_buff(const Single_Attack *single_attack)
                 check_time_constrain(i->attack_time, i->attack_time + 8, single_attack->attack_config->attack_time, single_attack->team_config->rotation_time) &&
                 ("扩散" + single_attack->attack_config->c_point->get_attack_ele_type(single_attack)) <= i->react_type)
             {
-                //TODO:不允许二次转化
-                //single_attack->converted_percentage = single_attack->converted_percentage + attribute_data("伤害加成", 0.0004 * typical_mastery);
+                result = result + attribute_data("伤害加成", 0.0004 * typical_mastery);
                 break;
             }
     //constellation 2

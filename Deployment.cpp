@@ -170,7 +170,7 @@ double Single_Attack::cal_damage(const attribute_data<double> &entry_value, doub
     //TODO:部分增伤并没有添加在面板上却参与了转化，目前没有增伤转别的：将所有添加的属性分为percentage,converted_percentage,monster_percentage
     attribute_data<double> panel = percentage + entry_value + attribute_data("暴击率", 0.08) + attribute_data("暴击伤害", 0.15);
     //get panel convert
-    panel = panel + self->c_point->get_panel_convert(this, panel) + self->w_point->get_panel_convert(this, panel) + self->suit1->get_panel_convert(this, panel);
+    panel = panel + converted_percentage + self->c_point->get_panel_convert(this, panel) + self->w_point->get_panel_convert(this, panel) + self->suit1->get_panel_convert(this, panel);
     //get total convert
     panel = panel + self->c_point->get_total_convert(this, panel) + self->w_point->get_total_convert(this, panel) + self->suit1->get_total_convert(this, panel);
     //check_recharge

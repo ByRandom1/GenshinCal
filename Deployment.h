@@ -81,6 +81,7 @@ public:
     int base_def = 0;
     double base_skillrate = 0;
     attribute_data<double> percentage;
+    mutable attribute_data<double> converted_percentage;
 
     Single_Attack(Combination *self_,
                   Team_Config *team_config_,
