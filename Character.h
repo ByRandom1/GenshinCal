@@ -96,7 +96,9 @@ public:
 
     double get_rate(const string &attack_way, int pos);
 
-    attribute_data<double> get_break(const string& ele_type_);
+    attribute_data<double> get_break(const string &ele_type_);
+
+    bool get_attack_lock_face(const string &attack_way_);
 
     virtual string get_attack_ele_type(const Single_Attack *single_attack);
 
