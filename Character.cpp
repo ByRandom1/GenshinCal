@@ -129,7 +129,7 @@ double Character::get_rate(const string &attack_way, int pos)
     else return 0;
 }
 
-attribute_data<double> Character::get_break(const string& ele_type_)
+attribute_data<double> Character::get_break(const string &ele_type_)
 {
     if (ele_type != ele_type_) return break_value + attribute_data("伤害加成", -break_value.get("伤害加成"));
     else return break_value;
@@ -149,12 +149,15 @@ string Character::get_attack_ele_type(const Single_Attack *single_attack)
     return "";
 }
 
-void Character::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Character::get_recharge(const Single_Attack *single_attack)
 {
+    double Q_energy_modify = 0;
+    double energy = 0;
     if (single_attack->attack_config->c_point == this)
         for (auto i: single_attack->team_config->rotation)
             if (i->c_point == this && i->action == "release" && i->attack_way == "Q")
                 Q_energy_modify += Q_energy;
+    return make_tuple(Q_energy_modify, energy);
 }
 
 attribute_data<int> Character::get_useful_attribute(const Single_Attack *single_attack)
@@ -169,8 +172,8 @@ attribute_data<int> Character::get_useful_attribute(const Single_Attack *single_
     return {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 }
 
-attribute_data<double> Character::get_buff(const Single_Attack *single_attack)
-{ return {}; }
+tuple<attribute_data<double>, attribute_data<double>> Character::get_buff(const Single_Attack *single_attack)
+{ return make_tuple(attribute_data<double>(), attribute_data<double>()); }
 
 attribute_data<double> Character::get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 { return {}; }
@@ -235,9 +238,11 @@ string Hutao::get_attack_ele_type(const Single_Attack *single_attack)
     return result;
 }
 
-void Hutao::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Hutao::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E下平A重A，5s
     auto E_time = get_E_time(single_attack);
     double last_A_generate = -5;
@@ -250,6 +255,7 @@ void Hutao::get_recharge(const Single_Attack *single_attack, double &Q_energy_mo
                     last_A_generate = i->attack_time;
                     break;
                 }
+    return make_tuple(Q_energy_modify, energy);
 }
 
 attribute_data<int> Hutao::get_useful_attribute(const Single_Attack *single_attack)
@@ -276,9 +282,11 @@ attribute_data<int> Hutao::get_useful_attribute(const Single_Attack *single_atta
     return result;
 }
 
-attribute_data<double> Hutao::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Hutao::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //talent 1
     auto E_time = get_E_time(single_attack);
     for (auto &i: E_time)
@@ -295,7 +303,7 @@ attribute_data<double> Hutao::get_buff(const Single_Attack *single_attack)
         single_attack->attack_config->c_point->get_attack_ele_type(single_attack) == "火" &&
         !("heal" <= single_attack->team_config->heal_or_shield))
         result = result + attribute_data("伤害加成", 0.33);
-    return result;
+    return make_tuple(result, converted);
 }
 
 attribute_data<double> Hutao::get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -320,7 +328,6 @@ double Hutao::get_extra_rate(const Single_Attack *single_attack, attribute_data<
     //constellation 2
     if (constellation >= 2)
     {
-        //TODO:lockface
         if (single_attack->attack_config->c_point == this &&
             single_attack->attack_config->action == "hit" &&
             single_attack->attack_config->attack_way == "E")
@@ -448,18 +455,23 @@ string Alhaitham::get_attack_ele_type(const Single_Attack *single_attack)
     return result;
 }
 
-void Alhaitham::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Alhaitham::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E命中
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E" && i->rate_pos != 0)
             energy += 1 * (single_attack->attack_config->c_point->get_ele_type() == get_ele_type() ? 3 : 1) * (this == single_attack->attack_config->c_point ? 1 : 0.6);
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Alhaitham::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Alhaitham::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //constellation 2
     if (constellation >= 2)
     {
@@ -504,7 +516,8 @@ attribute_data<double> Alhaitham::get_buff(const Single_Attack *single_attack)
     if (constellation >= 6)
     {
         auto mirror_time = get_mirror_time(single_attack);
-        stable_sort(mirror_time.begin(), mirror_time.end(), [](pair<int, double> a, pair<int, double> b) { return a.second < b.second; });
+        stable_sort(mirror_time.begin(), mirror_time.end(), [](pair<int, double> a, pair<int, double> b)
+        { return a.second < b.second; });
         //超出上限在vector中呈现出 1、.second相等 2、+在前-在后且连续
         //TODO:下一个循环可能触发末尾buff的延长
         vector<pair<double, double>> time_range;
@@ -539,7 +552,7 @@ attribute_data<double> Alhaitham::get_buff(const Single_Attack *single_attack)
                 break;
             }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 attribute_data<double> Alhaitham::get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -625,9 +638,11 @@ vector<pair<double, double>> Raiden::get_Q_time(const Single_Attack *single_atta
     return result;
 }
 
-void Raiden::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Raiden::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E" && i->rate_pos != 0)
@@ -646,11 +661,14 @@ void Raiden::get_recharge(const Single_Attack *single_attack, double &Q_energy_m
                 count++;
             }
         }
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Raiden::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Raiden::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E" && i->rate_pos == 0)
@@ -688,7 +706,7 @@ attribute_data<double> Raiden::get_buff(const Single_Attack *single_attack)
                 break;
             }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 attribute_data<double> Raiden::get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -736,18 +754,23 @@ string Ayaka::get_attack_ele_type(const Single_Attack *single_attack)
     return result;
 }
 
-void Ayaka::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Ayaka::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E")
             energy += 4.5 * (single_attack->attack_config->c_point->get_ele_type() == get_ele_type() ? 3 : 1) * (this == single_attack->attack_config->c_point ? 1 : 0.6);
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Ayaka::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Ayaka::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //talent 1
     for (auto &i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E")
@@ -782,7 +805,7 @@ attribute_data<double> Ayaka::get_buff(const Single_Attack *single_attack)
                     break;
                 }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 Ganyu::Ganyu(int A_level, int E_level, int Q_level, int constellation) : Character("甘雨", "ganyu", "冰", "弓", 9797, 335, 630, attribute_data("暴击伤害", 0.384),
@@ -793,9 +816,11 @@ Ganyu::Ganyu(int A_level, int E_level, int Q_level, int constellation) : Charact
                                                                                    constellation)
 {}
 
-void Ganyu::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Ganyu::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E")
@@ -807,11 +832,14 @@ void Ganyu::get_recharge(const Single_Attack *single_attack, double &Q_energy_mo
             if (i->c_point == this && i->action == "hit" && i->attack_way == "重A" && i->rate_pos == 0)
                 Q_energy_modify -= 2;
     }
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Ganyu::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Ganyu::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //talent 1
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "release" && i->attack_way == "重A")
@@ -891,7 +919,7 @@ attribute_data<double> Ganyu::get_buff(const Single_Attack *single_attack)
                 break;
             }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 Nahida::Nahida(int A_level, int E_level, int Q_level, int constellation, double typical_max_mastery_) : Character("纳西妲", "nahida", "草", "法器", 10360, 299, 630, attribute_data("元素精通", 115.0),
@@ -902,9 +930,11 @@ Nahida::Nahida(int A_level, int E_level, int Q_level, int constellation, double 
                                                                                                                   constellation)
 { typical_max_mastery = typical_max_mastery_; }
 
-void Nahida::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Nahida::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     double last_E_generate = -7;
     for (auto i: single_attack->team_config->rotation)
@@ -913,11 +943,14 @@ void Nahida::get_recharge(const Single_Attack *single_attack, double &Q_energy_m
             energy += 3 * (single_attack->attack_config->c_point->get_ele_type() == get_ele_type() ? 3 : 1) * (single_attack->team_config->get_front(i->attack_time) == single_attack->attack_config->c_point ? 1 : 0.6);
             last_E_generate = i->attack_time;
         }
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Nahida::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Nahida::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //Q constellation 1
     int water_num = (constellation >= 1 ? 1 : 0) +
                     (single_attack->team_config->team[0]->c_point->get_ele_type() == "水" ? 1 : 0) +
@@ -978,7 +1011,7 @@ attribute_data<double> Nahida::get_buff(const Single_Attack *single_attack)
                 single_attack->attack_config->action == "hit" &&
                 check_time_constrain(i->attack_time + 2, i->attack_time + 17 + Q_extend_time, single_attack->attack_config->attack_time, single_attack->team_config->rotation_time))
             {
-                single_attack->converted_percentage = single_attack->converted_percentage + attribute_data("元素精通", min(250.0, 0.25 * typical_max_mastery));
+                converted = converted + attribute_data("元素精通", min(250.0, 0.25 * typical_max_mastery));
                 break;
             }
     //constellation 2
@@ -1013,7 +1046,7 @@ attribute_data<double> Nahida::get_buff(const Single_Attack *single_attack)
                     break;
                 }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 attribute_data<double> Nahida::get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -1056,18 +1089,23 @@ Yelan::Yelan(int A_level, int E_level, int Q_level, int constellation) : Charact
                                                                                    constellation)
 {}
 
-void Yelan::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Yelan::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E")
             energy += 4 * (single_attack->attack_config->c_point->get_ele_type() == get_ele_type() ? 3 : 1) * (this == single_attack->attack_config->c_point ? 1 : 0.6);
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Yelan::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Yelan::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //talent 1
     int diff_ele_num = 1;
     if (single_attack->team_config->team[1]->c_point->get_ele_type() != single_attack->team_config->team[0]->c_point->get_ele_type())
@@ -1138,7 +1176,7 @@ attribute_data<double> Yelan::get_buff(const Single_Attack *single_attack)
                     count++;
                 }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 double Yelan::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -1195,9 +1233,11 @@ Yaemiko::Yaemiko(int A_level, int E_level, int Q_level, int constellation) : Cha
                                                                                        constellation)
 {}
 
-void Yaemiko::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Yaemiko::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     double last_E_generate = -3;
     for (auto i: single_attack->team_config->rotation)
@@ -1213,11 +1253,14 @@ void Yaemiko::get_recharge(const Single_Attack *single_attack, double &Q_energy_
             if (i->c_point == this && i->action == "hit" && i->attack_way == "Q" && i->rate_pos == 1)
                 Q_energy_modify -= 8;
     }
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Yaemiko::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Yaemiko::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //constellation 4
     if (constellation >= 4)
     {
@@ -1241,7 +1284,7 @@ attribute_data<double> Yaemiko::get_buff(const Single_Attack *single_attack)
             result = result + attribute_data("防御无视", 0.6);
         }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 attribute_data<double> Yaemiko::get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -1266,18 +1309,23 @@ Xiangling::Xiangling(int A_level, int E_level, int Q_level, int constellation) :
                                                                                            constellation)
 {}
 
-void Xiangling::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Xiangling::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E")
             energy += 1 * (single_attack->attack_config->c_point->get_ele_type() == get_ele_type() ? 3 : 1) * (single_attack->team_config->get_front(i->attack_time) == single_attack->attack_config->c_point ? 1 : 0.6);
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Xiangling::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Xiangling::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //constellation 1
     if (constellation >= 1)
     {
@@ -1304,7 +1352,7 @@ attribute_data<double> Xiangling::get_buff(const Single_Attack *single_attack)
                     break;
                 }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 Xingqiu::Xingqiu(int A_level, int E_level, int Q_level, int constellation) : Character("行秋", "xingqiu", "水", "单手剑", 10222, 202, 758, attribute_data("攻击力", 0.24),
@@ -1315,9 +1363,11 @@ Xingqiu::Xingqiu(int A_level, int E_level, int Q_level, int constellation) : Cha
                                                                                        constellation)
 {}
 
-void Xingqiu::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Xingqiu::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E" && i->rate_pos == 0)
@@ -1338,11 +1388,14 @@ void Xingqiu::get_recharge(const Single_Attack *single_attack, double &Q_energy_
                 }
         }
     }
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Xingqiu::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Xingqiu::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //talent 2
     if (single_attack->attack_config->c_point == this &&
         single_attack->attack_config->action == "hit" &&
@@ -1363,7 +1416,7 @@ attribute_data<double> Xingqiu::get_buff(const Single_Attack *single_attack)
                     break;
                 }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 double Xingqiu::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -1394,9 +1447,11 @@ Zhongli::Zhongli(int A_level, int E_level, int Q_level, int constellation) : Cha
                                                                                        constellation)
 {}
 
-void Zhongli::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Zhongli::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     double last_E_generate = -2;
     for (auto i: single_attack->team_config->rotation)
@@ -1405,11 +1460,14 @@ void Zhongli::get_recharge(const Single_Attack *single_attack, double &Q_energy_
             energy += 0.5 * (single_attack->attack_config->c_point->get_ele_type() == get_ele_type() ? 3 : 1) * (single_attack->team_config->get_front(i->attack_time) == single_attack->attack_config->c_point ? 1 : 0.6);
             last_E_generate = i->attack_time;
         }
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Zhongli::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Zhongli::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //E 不考虑护盾破碎
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "release" && i->attack_way == "E")
@@ -1419,7 +1477,7 @@ attribute_data<double> Zhongli::get_buff(const Single_Attack *single_attack)
                 result = result + attribute_data("抗性削弱", 0.2);
                 break;
             }
-    return result;
+    return make_tuple(result, converted);
 }
 
 double Zhongli::get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -1475,13 +1533,16 @@ string Kazuha::get_attack_ele_type(const Single_Attack *single_attack)
     return result;
 }
 
-void Kazuha::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Kazuha::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E")
             energy += (i->rate_pos == 0 ? 3 : 4) * (single_attack->attack_config->c_point->get_ele_type() == get_ele_type() ? 3 : 1) * (this == single_attack->attack_config->c_point ? 1 : 0.6);
+    return make_tuple(Q_energy_modify, energy);
 }
 
 attribute_data<int> Kazuha::get_useful_attribute(const Single_Attack *single_attack)
@@ -1504,9 +1565,11 @@ attribute_data<int> Kazuha::get_useful_attribute(const Single_Attack *single_att
     return result;
 }
 
-attribute_data<double> Kazuha::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Kazuha::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //talent 2
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && "扩散" <= i->react_type)
@@ -1514,7 +1577,7 @@ attribute_data<double> Kazuha::get_buff(const Single_Attack *single_attack)
                 check_time_constrain(i->attack_time, i->attack_time + 8, single_attack->attack_config->attack_time, single_attack->team_config->rotation_time) &&
                 ("扩散" + single_attack->attack_config->c_point->get_attack_ele_type(single_attack)) <= i->react_type)
             {
-                result = result + attribute_data("伤害加成", 0.0004 * typical_mastery);
+                converted = converted + attribute_data("伤害加成", 0.0004 * typical_mastery);
                 break;
             }
     //constellation 2
@@ -1540,7 +1603,7 @@ attribute_data<double> Kazuha::get_buff(const Single_Attack *single_attack)
                 }
             }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 attribute_data<double> Kazuha::get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -1590,18 +1653,23 @@ vector<pair<double, double>> Mona::get_Q_time(const Single_Attack *single_attack
     return result;
 }
 
-void Mona::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Mona::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E" && i->rate_pos == 1)
             energy += 3 * (single_attack->attack_config->c_point->get_ele_type() == get_ele_type() ? 3 : 1) * (single_attack->team_config->get_front(i->attack_time) == single_attack->attack_config->c_point ? 1 : 0.6);
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Mona::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Mona::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //Q
     auto Q_time = get_Q_time(single_attack);
     for (auto &i: Q_time)
@@ -1622,7 +1690,7 @@ attribute_data<double> Mona::get_buff(const Single_Attack *single_attack)
                 break;
             }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 attribute_data<double> Mona::get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -1691,9 +1759,11 @@ string Bennett::get_attack_ele_type(const Single_Attack *single_attack)
     return result;
 }
 
-void Bennett::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+tuple<double, double> Bennett::get_recharge(const Single_Attack *single_attack)
 {
-    Character::get_recharge(single_attack, Q_energy_modify, energy);
+    double Q_energy_modify = 0;
+    double energy = 0;
+    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
     //E
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E")
@@ -1703,11 +1773,14 @@ void Bennett::get_recharge(const Single_Attack *single_attack, double &Q_energy_
             else if (i->rate_pos == 1 || i->rate_pos == 3)
                 energy += 3 * (single_attack->attack_config->c_point->get_ele_type() == get_ele_type() ? 3 : 1) * (this == single_attack->attack_config->c_point ? 1 : 0.6);
         }
+    return make_tuple(Q_energy_modify, energy);
 }
 
-attribute_data<double> Bennett::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Bennett::get_buff(const Single_Attack *single_attack)
 {
-    attribute_data<double> result = Character::get_buff(single_attack);
+    attribute_data<double> result;
+    attribute_data<double> converted;
+    tie(result, converted) = Character::get_buff(single_attack);
     //Q constellation 1
     for (auto i: single_attack->team_config->rotation)
         if (i->c_point == this && i->action == "hit" && i->attack_way == "Q")
@@ -1736,7 +1809,7 @@ attribute_data<double> Bennett::get_buff(const Single_Attack *single_attack)
                     break;
                 }
     }
-    return result;
+    return make_tuple(result, converted);
 }
 
 //SAMPLE
@@ -1750,10 +1823,13 @@ attribute_data<double> Bennett::get_buff(const Single_Attack *single_attack)
 //    return result;
 //}
 //
-//void A::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
+//tuple<double, double> A::get_recharge(const Single_Attack *single_attack)
 //{
-//    Character::get_recharge(single_attack, Q_energy_modify, energy);
+//    double Q_energy_modify = 0;
+//    double energy = 0;
+//    tie(Q_energy_modify, energy) = Character::get_recharge(single_attack);
 //
+//    return make_tuple(Q_energy_modify, energy);
 //}
 //
 //attribute_data<int> A::get_useful_attribute(const Single_Attack *single_attack)
@@ -1763,11 +1839,13 @@ attribute_data<double> Bennett::get_buff(const Single_Attack *single_attack)
 //    return result;
 //}
 //
-//attribute_data<double> A::get_buff(const Single_Attack *single_attack)
+//tuple<attribute_data<double>, attribute_data<double>> A::get_buff(const Single_Attack *single_attack)
 //{
-//    attribute_data<double> result = Character::get_buff(single_attack);
+//    attribute_data<double> result;
+//    attribute_data<double> converted;
+//    tie(result, converted) = Character::get_buff(single_attack);
 //
-//    return result;
+//    return make_tuple(result, converted);
 //}
 //
 //attribute_data<double> A::get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel)

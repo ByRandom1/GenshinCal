@@ -23,11 +23,11 @@ public:
 
     string get_name() const;
 
-    virtual void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy);
+    virtual tuple<double, double> get_recharge(const Single_Attack *single_attack);
 
     virtual attribute_data<int> get_useful_attribute(const Single_Attack *single_attack);
 
-    virtual attribute_data<double> get_buff(const Single_Attack *single_attack);
+    virtual tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack);
 
     virtual attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel);
 

@@ -49,7 +49,8 @@ Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Comb
     team[3] = c4;
     heal_or_shield = std::move(heal_or_shield_);
     rotation = std::move(rotation_);
-    stable_sort(rotation.begin(), rotation.end(), [](Attack_Config *a, Attack_Config *b) { return a->attack_time < b->attack_time; });
+    stable_sort(rotation.begin(), rotation.end(), [](Attack_Config *a, Attack_Config *b)
+    { return a->attack_time < b->attack_time; });
     rotation_time = rotation_time_;
 }
 
@@ -69,7 +70,7 @@ Character *Team_Config::get_front(double time_point)
     time_point = (time_point > rotation_time) ? time_point - rotation_time : time_point;
     for (auto i: rotation)
     {
-        if (i->attack_time > time_point) break;
+        if (i->attack_time >= time_point) break;
         if (i->action == "switch") front = i->c_point;
     }
     return front;
@@ -98,6 +99,9 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
     attribute_data<int> useful;
     bool suit1_valid, suit2_valid, main3_valid, main4_valid, main5_valid;
 
+    attribute_data<double> result;
+    attribute_data<double> converted;
+
     //modify useful
     useful = self->c_point->get_useful_attribute(this) + self->w_point->get_useful_attribute(this) + self->suit1->get_useful_attribute(this);
     if (!attack_config->react_type.empty()) useful = useful + attribute_data("元素精通", 1);
@@ -109,18 +113,34 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
     base_def = self->c_point->get_def();
     base_skillrate = self->c_point->get_rate(attack_config->attack_way, attack_config->rate_pos);
     percentage = attribute_data(1.0, 1.0, 1.0, 0.0, 1.0, 0.05, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-                 + self->c_point->get_break(self->c_point->get_attack_ele_type(this)) + self->c_point->get_buff(this)
-                 + self->w_point->get_break(self->c_point->get_attack_ele_type(this)) + self->w_point->get_buff(this);
+                 + self->c_point->get_break(self->c_point->get_attack_ele_type(this)) + self->w_point->get_break(self->c_point->get_attack_ele_type(this));
+
+    tie(result, converted) = self->c_point->get_buff(this);
+    percentage = percentage + result;
+    converted_percentage = converted_percentage + converted;
+
+    tie(result, converted) = self->w_point->get_buff(this);
+    percentage = percentage + result;
+    converted_percentage = converted_percentage + converted;
+
     if (self->suit1 == self->suit2)
     {
-        suit1_valid = suit2_valid = judge_useful(useful, self->suit1->get_buff(this));
-        percentage = percentage + self->suit1->get_buff(this);
+        tie(result, converted) = self->suit1->get_buff(this);
+        suit1_valid = suit2_valid = judge_useful(useful, result + converted);
+        percentage = percentage + result;
+        converted_percentage = converted_percentage + converted;
     }
     else
     {
-        suit1_valid = judge_useful(useful, self->suit1->get_buff(this));
-        suit2_valid = judge_useful(useful, self->suit2->get_buff(this));
-        percentage = percentage + self->suit1->get_buff(this) + self->suit2->get_buff(this);
+        tie(result, converted) = self->suit1->get_buff(this);
+        suit1_valid = judge_useful(useful, result + converted);
+        percentage = percentage + result;
+        converted_percentage = converted_percentage + converted;
+
+        tie(result, converted) = self->suit2->get_buff(this);
+        suit2_valid = judge_useful(useful, result + converted);
+        percentage = percentage + result;
+        converted_percentage = converted_percentage + converted;
     }
 
     //get entry
@@ -156,9 +176,21 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
     for (auto &i: team_config->team)
         if (i->c_point != self->c_point)
         {
-            percentage = percentage + i->c_point->get_buff(this);
-            if (i->w_point != nullptr) percentage = percentage + i->w_point->get_buff(this);
-            if (i->suit1 != nullptr) percentage = percentage + i->suit1->get_buff(this);
+            tie(result, converted) = i->c_point->get_buff(this);
+            percentage = percentage + result;
+            converted_percentage = converted_percentage + converted;
+            if (i->w_point != nullptr)
+            {
+                tie(result, converted) = i->w_point->get_buff(this);
+                percentage = percentage + result;
+                converted_percentage = converted_percentage + converted;
+            }
+            if (i->suit1 != nullptr)
+            {
+                tie(result, converted) = i->suit1->get_buff(this);
+                percentage = percentage + result;
+                converted_percentage = converted_percentage + converted;
+            }
         }
     percentage = percentage + get_team_bonus();
 
@@ -380,13 +412,23 @@ int Deployment::get_all_data()
     //cal recharge
     double Q_energy_modify = 0.0;
     double energy = team_config->rotation_time / 2;
+    double temp_Q_energy_modify;
+    double temp_energy;
     for (auto &i: team_config->team)
     {
-        i->c_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-        if (i->c_point != self->c_point && i->w_point != nullptr) i->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-        else if (i->c_point == self->c_point) self->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-        if (i->c_point != self->c_point && i->suit1 != nullptr) i->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
-        else if (i->c_point == self->c_point) self->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
+        tie(temp_Q_energy_modify, temp_energy) = i->c_point->get_recharge(attack_list[0]);
+        Q_energy_modify += temp_Q_energy_modify;
+        energy += temp_energy;
+
+        if (i->c_point == self->c_point) tie(temp_Q_energy_modify, temp_energy) = self->w_point->get_recharge(attack_list[0]);
+        else if (i->w_point != nullptr) tie(temp_Q_energy_modify, temp_energy) = i->w_point->get_recharge(attack_list[0]);
+        Q_energy_modify += temp_Q_energy_modify;
+        energy += temp_energy;
+
+        if (i->c_point == self->c_point) tie(temp_Q_energy_modify, temp_energy) = self->suit1->get_recharge(attack_list[0]);
+        else if (i->suit1 != nullptr) tie(temp_Q_energy_modify, temp_energy) = i->suit1->get_recharge(attack_list[0]);
+        Q_energy_modify += temp_Q_energy_modify;
+        energy += temp_energy;
     }
     min_recharge = max(Q_energy_modify / energy, 0.0);
 

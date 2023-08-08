@@ -96,7 +96,7 @@ public:
 
     double get_rate(const string &attack_way, int pos);
 
-    attribute_data<double> get_break(const string& ele_type_);
+    attribute_data<double> get_break(const string &ele_type_);
 
     virtual string get_attack_ele_type(const Single_Attack *single_attack);
 
@@ -114,11 +114,11 @@ public:
     */
 
     //TODO:带有CD限制的能量产生会受上一循环影响，这里忽略
-    virtual void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy);
+    virtual tuple<double, double> get_recharge(const Single_Attack *single_attack);
 
     virtual attribute_data<int> get_useful_attribute(const Single_Attack *single_attack);
 
-    virtual attribute_data<double> get_buff(const Single_Attack *single_attack);
+    virtual tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack);
 
     virtual attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel);
 
@@ -141,11 +141,11 @@ public:
 
     string get_attack_ele_type(const Single_Attack *single_attack) override;
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
     attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
@@ -163,9 +163,9 @@ public:
 
     string get_attack_ele_type(const Single_Attack *single_attack) override;
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
@@ -181,9 +181,9 @@ class Raiden : public Character
 public:
     Raiden(int A_level, int E_level, int Q_level, int constellation, double typical_recharge_);
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
@@ -201,9 +201,9 @@ public:
 
     string get_attack_ele_type(const Single_Attack *single_attack) override;
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 };
 
 class Ganyu : public Character
@@ -212,9 +212,9 @@ class Ganyu : public Character
 public:
     Ganyu(int A_level, int E_level, int Q_level, int constellation);
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 };
 
 class Nahida : public Character
@@ -223,9 +223,9 @@ class Nahida : public Character
 public:
     Nahida(int A_level, int E_level, int Q_level, int constellation, double typical_max_mastery_);
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
@@ -241,9 +241,9 @@ class Yelan : public Character
 public:
     Yelan(int A_level, int E_level, int Q_level, int constellation);
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 };
@@ -254,9 +254,9 @@ class Yaemiko : public Character
 public:
     Yaemiko(int A_level, int E_level, int Q_level, int constellation);
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 };
@@ -267,9 +267,9 @@ class Xiangling : public Character
 public:
     Xiangling(int A_level, int E_level, int Q_level, int constellation);
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 };
 
 class Xingqiu : public Character
@@ -278,9 +278,9 @@ class Xingqiu : public Character
 public:
     Xingqiu(int A_level, int E_level, int Q_level, int constellation);
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 };
@@ -291,9 +291,9 @@ class Zhongli : public Character
 public:
     Zhongli(int A_level, int E_level, int Q_level, int constellation);
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 };
@@ -306,11 +306,11 @@ public:
 
     string get_attack_ele_type(const Single_Attack *single_attack) override;
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
     attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_total_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
@@ -324,9 +324,9 @@ class Mona : public Character
 public:
     Mona(int A_level, int E_level, int Q_level, int constellation);
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
     attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
@@ -344,9 +344,9 @@ public:
 
     string get_attack_ele_type(const Single_Attack *single_attack) override;
 
-    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 
-    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 
 private:
     double typical_atk;
@@ -360,11 +360,11 @@ private:
 //
 //    string get_attack_ele_type(const Single_Attack *single_attack) override;
 //
-//    void get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy) override;
+//    tuple<double, double> get_recharge(const Single_Attack *single_attack) override;
 //
 //    attribute_data<int> get_useful_attribute(const Single_Attack *single_attack) override;
 //
-//    attribute_data<double> get_buff(const Single_Attack *single_attack) override;
+//    tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack) override;
 //
 //    attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel) override;
 //

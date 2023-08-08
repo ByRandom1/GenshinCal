@@ -363,7 +363,6 @@ void cal_optimal_combination(Config_File *config)
                 }
                 NEXTARTIFACT1:;
             }
-            //TODO:设定线程池，规定最大线程数
             for (auto &th: ths) th.join();
 
             chrono::duration<double> time = chrono::system_clock::now() - start;

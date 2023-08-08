@@ -17,14 +17,14 @@ Artifact::Artifact(string name_,
 string Artifact::get_name() const
 { return name; }
 
-void Artifact::get_recharge(const Single_Attack *single_attack, double &Q_energy_modify, double &energy)
-{}
+tuple<double, double> Artifact::get_recharge(const Single_Attack *single_attack)
+{ return make_tuple(0, 0); }
 
 attribute_data<int> Artifact::get_useful_attribute(const Single_Attack *single_attack)
 { return {}; }
 
-attribute_data<double> Artifact::get_buff(const Single_Attack *single_attack)
-{ return {}; }
+tuple<attribute_data<double>, attribute_data<double>> Artifact::get_buff(const Single_Attack *single_attack)
+{ return make_tuple(attribute_data<double>(), attribute_data<double>()); }
 
 attribute_data<double> Artifact::get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel)
 { return {}; }
