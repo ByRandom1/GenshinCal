@@ -31,14 +31,9 @@ string Weapon::get_weapon_type()
 int Weapon::get_atk() const
 { return atk; }
 
-attribute_data<double> Weapon::get_break(const string& ele_type)
+attribute_data<double> Weapon::get_break(const string &ele_type)
 {
-    if (ele_type != "物理")
-    {
-        attribute_data<double> result = break_value;
-        result.data["伤害加成"] = 0.0;
-        return result;
-    }
+    if (ele_type != "物理") return break_value + attribute_data("伤害加成", -break_value.get("伤害加成"));
     else return break_value;
 }
 

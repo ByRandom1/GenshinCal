@@ -15,9 +15,10 @@ using namespace std;
 template<typename T>
 class attribute_data
 {
-public:
+private:
     map<string, T> data;
 
+public:
     attribute_data()
     {
         data["生命值"] = T();
@@ -106,16 +107,16 @@ public:
                               this->data.at("治疗加成") + other.data.at("治疗加成"),
                               this->data.at("护盾强效") + other.data.at("护盾强效"));
     }
+
+    T get(string key)
+    {
+        if (data.find(key) != data.end()) return data[key];
+        else return T();
+    }
 };
 
 bool operator<=(const string &inf, const string &target);
 
 bool check_time_constrain(double buff_start, double buff_end, double attack_time, double rotation_time);
-
-class Character;
-
-class Team_Config;
-
-Character *get_front(const Team_Config *team_config, double time_point);
 
 #endif //GENSHINCAL_BASIC_ELEMENTS_H

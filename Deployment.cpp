@@ -49,6 +49,7 @@ Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Comb
     team[3] = c4;
     heal_or_shield = std::move(heal_or_shield_);
     rotation = std::move(rotation_);
+    stable_sort(rotation.begin(), rotation.end(), [](Attack_Config *a, Attack_Config *b) { return a->attack_time < b->attack_time; });
     rotation_time = rotation_time_;
 }
 
@@ -61,6 +62,19 @@ Team_Config::~Team_Config()
     for (auto &i: rotation) delete i;
 }
 
+Character *Team_Config::get_front(double time_point)
+{
+    //switch release hit 组成 rotation
+    Character *front = nullptr;
+    time_point = (time_point > rotation_time) ? time_point - rotation_time : time_point;
+    for (auto i: rotation)
+    {
+        if (i->attack_time > time_point) break;
+        if (i->action == "switch") front = i->c_point;
+    }
+    return front;
+}
+
 Single_Attack::Single_Attack(Combination *self_,
                              Team_Config *team_config_,
                              Attack_Config *attack_config_)
@@ -70,20 +84,24 @@ Single_Attack::Single_Attack(Combination *self_,
     attack_config = attack_config_;
 }
 
-bool judge_useful(const attribute_data<int> &useful, attribute_data<double> value)
+bool judge_useful(attribute_data<int> useful, attribute_data<double> value)
 {
     double total = 0;
-    for (auto &iter: useful.data)
-        total += (iter.second > 0 && value.data[iter.first] > 0) ? value.data[iter.first] : 0;
+    string key[13] = {"生命值", "攻击力", "防御力", "元素精通", "元素充能效率", "暴击率", "暴击伤害", "伤害加成", "抗性削弱", "防御削弱", "防御无视", "治疗加成", "护盾强效"};
+    for (const auto &i: key)
+        total += (useful.get(i) > 0 && value.get(i) > 0) ? value.get(i) : 0;
     return (total > 0);
 }
 
-void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_valid, bool &main4_valid, bool &main5_valid, double min_recharge)
+tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data(double min_recharge)
 {
+    attribute_data<int> useful;
+    bool suit1_valid, suit2_valid, main3_valid, main4_valid, main5_valid;
+
     //modify useful
     useful = self->c_point->get_useful_attribute(this) + self->w_point->get_useful_attribute(this) + self->suit1->get_useful_attribute(this);
-    if (!attack_config->react_type.empty()) useful.data["元素精通"] += 1;
-    if (min_recharge > 1.0) useful.data["元素充能效率"] += 1;
+    if (!attack_config->react_type.empty()) useful = useful + attribute_data("元素精通", 1);
+    if (min_recharge > 1.0) useful = useful + attribute_data("元素充能效率", 1);
 
     //get data
     base_life = self->c_point->get_life();
@@ -106,32 +124,33 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
     }
 
     //get entry
-    percentage.data["生命值"] += 4780.0 / base_life;
-    percentage.data["攻击力"] += 311.0 / base_atk;
-    main3_valid = (useful.data[self->a_main3] > 0);
-    if (self->a_main3 == "生命值") percentage.data["生命值"] += 0.466;
-    else if (self->a_main3 == "攻击力") percentage.data["攻击力"] += 0.466;
-    else if (self->a_main3 == "防御力") percentage.data["防御力"] += 0.583;
-    else if (self->a_main3 == "元素精通") percentage.data["元素精通"] += 187.0;
-    else if (self->a_main3 == "元素充能效率") percentage.data["元素充能效率"] += 0.518;
-    main4_valid = (useful.data[self->a_main4] > 0);
-    if (self->a_main4 == "生命值") percentage.data["生命值"] += 0.466;
-    else if (self->a_main4 == "攻击力") percentage.data["攻击力"] += 0.466;
-    else if (self->a_main4 == "防御力") percentage.data["防御力"] += 0.583;
-    else if (self->a_main4 == "元素精通") percentage.data["元素精通"] += 187.0;
-    else if (self->a_main4 == "伤害加成")
+    percentage = percentage + attribute_data("生命值", 4780.0 / base_life);
+    percentage = percentage + attribute_data("攻击力", 311.0 / base_atk);
+    main3_valid = (useful.get(self->a_main3) > 0);
+    if (self->a_main3 == "生命值") percentage = percentage + attribute_data("生命值", 0.466);
+    else if (self->a_main3 == "攻击力") percentage = percentage + attribute_data("攻击力", 0.466);
+    else if (self->a_main3 == "防御力") percentage = percentage + attribute_data("防御力", 0.583);
+    else if (self->a_main3 == "元素精通") percentage = percentage + attribute_data("元素精通", 187.0);
+    else if (self->a_main3 == "元素充能效率") percentage = percentage + attribute_data("元素充能效率", 0.518);
+    main4_valid = (useful.get(self->a_main4) > 0);
+    if (self->a_main4 == "伤害加成" && self->c_point->get_ele_type() != self->c_point->get_attack_ele_type(this)) main4_valid = false;
+    if (self->a_main4 == "生命值") percentage = percentage + attribute_data("生命值", 0.466);
+    else if (self->a_main4 == "攻击力") percentage = percentage + attribute_data("攻击力", 0.466);
+    else if (self->a_main4 == "防御力") percentage = percentage + attribute_data("防御力", 0.583);
+    else if (self->a_main4 == "元素精通") percentage = percentage + attribute_data("元素精通", 187.0);
+    else if (self->a_main4 == "伤害加成" && self->c_point->get_ele_type() == self->c_point->get_attack_ele_type(this))
     {
-        if (self->c_point->get_attack_ele_type(this) == "物理") percentage.data["伤害加成"] += 0.583;
-        else percentage.data["伤害加成"] += 0.466;
+        if (self->c_point->get_ele_type() == "物理") percentage = percentage + attribute_data("伤害加成", 0.583);
+        else percentage = percentage + attribute_data("伤害加成", 0.466);
     }
-    main5_valid = (useful.data[self->a_main5] > 0);
-    if (self->a_main5 == "生命值") percentage.data["生命值"] += 0.466;
-    else if (self->a_main5 == "攻击力") percentage.data["攻击力"] += 0.466;
-    else if (self->a_main5 == "防御力") percentage.data["防御力"] += 0.583;
-    else if (self->a_main5 == "元素精通") percentage.data["元素精通"] += 187.0;
-    else if (self->a_main5 == "暴击率") percentage.data["暴击率"] += 0.311;
-    else if (self->a_main5 == "暴击伤害") percentage.data["暴击伤害"] += 0.622;
-    else if (self->a_main5 == "治疗加成") percentage.data["治疗加成"] += 0.359;
+    main5_valid = (useful.get(self->a_main5) > 0);
+    if (self->a_main5 == "生命值") percentage = percentage + attribute_data("生命值", 0.466);
+    else if (self->a_main5 == "攻击力") percentage = percentage + attribute_data("攻击力", 0.466);
+    else if (self->a_main5 == "防御力") percentage = percentage + attribute_data("防御力", 0.583);
+    else if (self->a_main5 == "元素精通") percentage = percentage + attribute_data("元素精通", 187.0);
+    else if (self->a_main5 == "暴击率") percentage = percentage + attribute_data("暴击率", 0.311);
+    else if (self->a_main5 == "暴击伤害") percentage = percentage + attribute_data("暴击伤害", 0.622);
+    else if (self->a_main5 == "治疗加成") percentage = percentage + attribute_data("治疗加成", 0.359);
 
     //get team
     for (auto &i: team_config->team)
@@ -142,6 +161,8 @@ void Single_Attack::get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_v
             if (i->suit1 != nullptr) percentage = percentage + i->suit1->get_buff(this);
         }
     percentage = percentage + get_team_bonus();
+
+    return make_tuple(useful, suit1_valid, suit2_valid, main3_valid, main4_valid, main5_valid);
 }
 
 double Single_Attack::cal_damage(const attribute_data<double> &entry_value, double min_recharge) const
@@ -153,13 +174,13 @@ double Single_Attack::cal_damage(const attribute_data<double> &entry_value, doub
     //get total convert
     panel = panel + self->c_point->get_total_convert(this, panel) + self->w_point->get_total_convert(this, panel) + self->suit1->get_total_convert(this, panel);
     //check_recharge
-    if (panel.data["元素充能效率"] < min_recharge) return -1;
+    if (panel.get("元素充能效率") < min_recharge) return -1;
     //get extra rate
     double extra_rate = self->c_point->get_extra_rate(this, panel) + self->w_point->get_extra_rate(this, panel) + self->suit1->get_extra_rate(this, panel);
     //get react
     double grow_rate = 1.0;
     double extra_damage = 0.0;
-    get_react_value(panel.data["元素精通"], extra_rate, grow_rate, extra_damage);
+    get_react_value(panel.get("元素精通"), extra_rate, grow_rate, extra_damage);
     for (auto i: team_config->rotation)
         if (i->action == "hit" && "超导" <= i->react_type)
             if (attack_config->action == "hit" &&
@@ -171,18 +192,14 @@ double Single_Attack::cal_damage(const attribute_data<double> &entry_value, doub
             }
     //get resist ratio
     double resistence_ratio;
-    if (0.1 - panel.data["抗性削弱"] >= 0.75) resistence_ratio = 1 / (4 * (0.1 - panel.data["抗性削弱"]) + 1);
-    else if (0.1 - panel.data["抗性削弱"] < 0) resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]) / 2;
-    else resistence_ratio = 1 - (0.1 - panel.data["抗性削弱"]);
+    if (0.1 - panel.get("抗性削弱") >= 0.75) resistence_ratio = 1 / (4 * (0.1 - panel.get("抗性削弱")) + 1);
+    else if (0.1 - panel.get("抗性削弱") < 0) resistence_ratio = 1 - (0.1 - panel.get("抗性削弱")) / 2;
+    else resistence_ratio = 1 - (0.1 - panel.get("抗性削弱"));
     //get def ratio
     double c_level = 90, enemy_level = 90;
-    double defence_ratio = (c_level + 100) / (c_level + 100 + (1 - panel.data["防御削弱"]) * (1 - panel.data["防御无视"]) * (enemy_level + 100));
+    double defence_ratio = (c_level + 100) / (c_level + 100 + (1 - panel.get("防御削弱")) * (1 - panel.get("防御无视")) * (enemy_level + 100));
 
-    //formalize data
-    if (panel.data["暴击率"] > 1.0) panel.data["暴击率"] = 1.0;
-    if (panel.data["暴击率"] < 0.0) panel.data["暴击率"] = 0.0;
-
-    return ((double) base_atk * panel.data["攻击力"] * base_skillrate + extra_rate) * panel.data["伤害加成"] * (1.0 + panel.data["暴击率"] * panel.data["暴击伤害"]) * grow_rate * resistence_ratio * defence_ratio + extra_damage;
+    return ((double) base_atk * panel.get("攻击力") * base_skillrate + extra_rate) * panel.get("伤害加成") * (1.0 + panel.get("暴击率") * panel.get("暴击伤害")) * grow_rate * resistence_ratio * defence_ratio + extra_damage;
 }
 
 attribute_data<double> Single_Attack::get_team_bonus() const
@@ -335,16 +352,26 @@ void Single_Attack::get_react_value(double mastery, double &extra_rate, double &
     }
 }
 
-Deployment::Deployment(Combination *self_, Team_Config *team_config_)
+Deployment::Deployment(Character *c_point_,
+                       Weapon *w_point_,
+                       Artifact *suit1_,
+                       Artifact *suit2_,
+                       string a_main3_,
+                       string a_main4_,
+                       string a_main5_,
+                       Team_Config *team_config_)
 {
-    for (auto i: team_config_->rotation)
-        if (i->c_point == self_->c_point && "hit" == i->action)
-            attack_list.push_back(new Single_Attack(self_, team_config_, i));
+    self = new Combination(c_point_, w_point_, suit1_, suit2_, std::move(a_main3_), std::move(a_main4_), std::move(a_main5_));
+    team_config = team_config_;
+
+    for (auto i: team_config->rotation)
+        if (i->c_point == self->c_point && "hit" == i->action)
+            attack_list.push_back(new Single_Attack(self, team_config, i));
 }
 
 Deployment::~Deployment()
 {
-    delete attack_list[0]->self;
+    delete self;
     for (auto &i: attack_list) delete i;
 }
 
@@ -352,14 +379,14 @@ int Deployment::get_all_data()
 {
     //cal recharge
     double Q_energy_modify = 0.0;
-    double energy = attack_list[0]->team_config->rotation_time / 2;
-    for (auto &i: attack_list[0]->team_config->team)
+    double energy = team_config->rotation_time / 2;
+    for (auto &i: team_config->team)
     {
         i->c_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-        if (i->c_point != attack_list[0]->self->c_point && i->w_point != nullptr) i->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-        else if (i->c_point == attack_list[0]->self->c_point) attack_list[0]->self->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
-        if (i->c_point != attack_list[0]->self->c_point && i->suit1 != nullptr) i->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
-        else if (i->c_point == attack_list[0]->self->c_point) attack_list[0]->self->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
+        if (i->c_point != self->c_point && i->w_point != nullptr) i->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
+        else if (i->c_point == self->c_point) self->w_point->get_recharge(attack_list[0], Q_energy_modify, energy);
+        if (i->c_point != self->c_point && i->suit1 != nullptr) i->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
+        else if (i->c_point == self->c_point) self->suit1->get_recharge(attack_list[0], Q_energy_modify, energy);
     }
     min_recharge = max(Q_energy_modify / energy, 0.0);
 
@@ -369,26 +396,24 @@ int Deployment::get_all_data()
     bool main4_valid = false;
     bool main5_valid = false;
 
-    bool suit1_valid_;
-    bool suit2_valid_;
-    bool main3_valid_;
-    bool main4_valid_;
-    bool main5_valid_;
-
     //init data
     for (auto &i: attack_list)
     {
-        i->get_data(suit1_valid_, suit2_valid_, main3_valid_, main4_valid_, main5_valid_, min_recharge);
+        attribute_data<int> useful_;
+        bool suit1_valid_, suit2_valid_, main3_valid_, main4_valid_, main5_valid_;
+
+        tie(useful_, suit1_valid_, suit2_valid_, main3_valid_, main4_valid_, main5_valid_) = i->get_data(min_recharge);
+
         suit1_valid = suit1_valid || suit1_valid_;
         suit2_valid = suit2_valid || suit2_valid_;
         main3_valid = main3_valid || main3_valid_;
         main4_valid = main4_valid || main4_valid_;
         main5_valid = main5_valid || main5_valid_;
-        collected_useful = collected_useful + i->useful;
+        collected_useful = collected_useful + useful_;
     }
 
     //valid check
-    if (!suit1_valid && attack_list[0]->self->suit1 != attack_list[0]->self->suit2) return 1;
+    if (!suit1_valid && self->suit1 != self->suit2) return 1;
     else if (!suit2_valid) return 2;
     else if (!main3_valid) return 3;
     else if (!main4_valid) return 4;
@@ -401,23 +426,23 @@ void Deployment::cal_optimal_entry_num()
     int totalbase = 20;
     int totalup = 5 * max_up_num_per_base;
     int totalnum = max_entry_num;
-    if (attack_list[0]->self->suit1 != attack_list[0]->self->suit2 && totalnum != 0) totalnum += artifact_2_2_max_entry_bonus;
+    if (self->suit1 != self->suit2 && totalnum != 0) totalnum += artifact_2_2_max_entry_bonus;
 
-    int life_pos = 5 - ((attack_list[0]->self->a_main3 == "生命值") ? 1 : 0) - ((attack_list[0]->self->a_main4 == "生命值") ? 1 : 0) - ((attack_list[0]->self->a_main5 == "生命值") ? 1 : 0);
-    int atk_pos = 5 - ((attack_list[0]->self->a_main3 == "攻击力") ? 1 : 0) - ((attack_list[0]->self->a_main4 == "攻击力") ? 1 : 0) - ((attack_list[0]->self->a_main5 == "攻击力") ? 1 : 0);
-    int def_pos = 5 - ((attack_list[0]->self->a_main3 == "防御力") ? 1 : 0) - ((attack_list[0]->self->a_main4 == "防御力") ? 1 : 0) - ((attack_list[0]->self->a_main5 == "防御力") ? 1 : 0);
-    int mastery_pos = 5 - ((attack_list[0]->self->a_main3 == "元素精通") ? 1 : 0) - ((attack_list[0]->self->a_main4 == "元素精通") ? 1 : 0) - ((attack_list[0]->self->a_main5 == "元素精通") ? 1 : 0);
-    int recharge_pos = 5 - ((attack_list[0]->self->a_main3 == "元素充能效率") ? 1 : 0);
-    int critrate_pos = 5 - ((attack_list[0]->self->a_main5 == "暴击率") ? 1 : 0);
-    int critdam_pos = 5 - ((attack_list[0]->self->a_main5 == "暴击伤害") ? 1 : 0);
+    int life_pos = 5 - ((self->a_main3 == "生命值") ? 1 : 0) - ((self->a_main4 == "生命值") ? 1 : 0) - ((self->a_main5 == "生命值") ? 1 : 0);
+    int atk_pos = 5 - ((self->a_main3 == "攻击力") ? 1 : 0) - ((self->a_main4 == "攻击力") ? 1 : 0) - ((self->a_main5 == "攻击力") ? 1 : 0);
+    int def_pos = 5 - ((self->a_main3 == "防御力") ? 1 : 0) - ((self->a_main4 == "防御力") ? 1 : 0) - ((self->a_main5 == "防御力") ? 1 : 0);
+    int mastery_pos = 5 - ((self->a_main3 == "元素精通") ? 1 : 0) - ((self->a_main4 == "元素精通") ? 1 : 0) - ((self->a_main5 == "元素精通") ? 1 : 0);
+    int recharge_pos = 5 - ((self->a_main3 == "元素充能效率") ? 1 : 0);
+    int critrate_pos = 5 - ((self->a_main5 == "暴击率") ? 1 : 0);
+    int critdam_pos = 5 - ((self->a_main5 == "暴击伤害") ? 1 : 0);
 
-    int life_base = (collected_useful.data["生命值"] > 0) ? life_pos : 0;
-    int atk_base = (collected_useful.data["攻击力"] > 0) ? atk_pos : 0;
-    int def_base = (collected_useful.data["防御力"] > 0) ? def_pos : 0;
-    int mastery_base = (collected_useful.data["元素精通"] > 0) ? mastery_pos : 0;
-    int recharge_base = (collected_useful.data["元素充能效率"] > 0) ? recharge_pos : 0;
-    int critrate_base = (collected_useful.data["暴击率"] > 0) ? critrate_pos : 0;
-    int critdam_base = (collected_useful.data["暴击伤害"] > 0) ? critdam_pos : 0;
+    int life_base = (collected_useful.get("生命值") > 0) ? life_pos : 0;
+    int atk_base = (collected_useful.get("攻击力") > 0) ? atk_pos : 0;
+    int def_base = (collected_useful.get("防御力") > 0) ? def_pos : 0;
+    int mastery_base = (collected_useful.get("元素精通") > 0) ? mastery_pos : 0;
+    int recharge_base = (collected_useful.get("元素充能效率") > 0) ? recharge_pos : 0;
+    int critrate_base = (collected_useful.get("暴击率") > 0) ? critrate_pos : 0;
+    int critdam_base = (collected_useful.get("暴击伤害") > 0) ? critdam_pos : 0;
 
     for (int lifebase = life_base; lifebase >= 0; lifebase--)
         for (int lifeup = min((int) round(max_attribute_num_per_pos * life_pos) - lifebase, max_up_num_per_base * lifebase); lifeup >= 0; lifeup--)

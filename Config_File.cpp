@@ -81,8 +81,7 @@ Config_File::Config_File(string team_name_, vector<string> file)
                 if (info[2] == "gcsim_combination")
                 {
                     map<string, string> params = get_params(info, '=');
-                    gcsim[pos].emplace_back(new Combination(ch[pos], find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]),
-                                                            find_artifact_by_name(params["suit2"]), params["main3"], params["main4"], params["main5"]));
+                    gcsim[pos].emplace_back(new Combination(ch[pos], find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]), find_artifact_by_name(params["suit2"]), params["main3"], params["main4"], params["main5"]));
                 }
                 else if (info[2] == "team_combination")
                 {
@@ -101,7 +100,6 @@ Config_File::Config_File(string team_name_, vector<string> file)
         index++;
     }
 
-    stable_sort(total.begin(), total.end(), [](Attack_Config *a, Attack_Config *b) { return a->attack_time < b->attack_time; });
     team_config = new Team_Config(team[0], team[1], team[2], team[3], (heal ? string("heal") : "") + (shield ? string("shield") : ""), total, rotation_time);
 }
 

@@ -320,9 +320,8 @@ void cal_optimal_combination(Config_File *config)
                         {
                             for (int m5_index = (m4_index == 4) ? ((m3_index == 4) ? 0 : m3_index) : m4_index; m5_index < 7; m5_index++)
                             {
-                                auto self = new Combination(c_index, w_index, Artifact_list[s1_index], Artifact_list[s2_index],
-                                                            a_main3[m3_index], a_main4[m4_index], a_main5[m5_index]);
-                                auto temp = new Deployment(self, config->team_config);
+                                auto temp = new Deployment(c_index, w_index, Artifact_list[s1_index], Artifact_list[s2_index],
+                                                           a_main3[m3_index], a_main4[m4_index], a_main5[m5_index], config->team_config);
                                 int check_num = temp->get_all_data();
                                 if (check_num == 0)//pass
                                 {
@@ -364,11 +363,10 @@ void cal_optimal_combination(Config_File *config)
                 }
                 NEXTARTIFACT1:;
             }
-
             //TODO:设定线程池，规定最大线程数
             for (auto &th: ths) th.join();
-            chrono::duration<double> time = chrono::system_clock::now() - start;
 
+            chrono::duration<double> time = chrono::system_clock::now() - start;
             if (!c_w_pair.empty())
             {
                 stable_sort(c_w_pair.begin(), c_w_pair.end(), [](Deployment *a, Deployment *b) { return a->total_damage > b->total_damage; });
@@ -382,33 +380,32 @@ void cal_optimal_combination(Config_File *config)
         }
 
         chrono::duration<double> total_time = chrono::system_clock::now() - total_start;
-
         if (!out.empty())
         {
             stable_sort(out.begin(), out.end(), [](Deployment *a, Deployment *b) { return a->total_damage > b->total_damage; });
             double total_damage_baseline = out[0]->total_damage;
             for (auto &d: out)
             {
-                outfile << d->attack_list[0]->self->c_point->get_name() << ","
-                        << ("(" + d->attack_list[0]->team_config->team[0]->c_point->get_name() + "_" + d->attack_list[0]->team_config->team[0]->w_point->get_name() + "_" + d->attack_list[0]->team_config->team[0]->suit1->get_name() + "_" + d->attack_list[0]->team_config->team[0]->suit2->get_name() + ")")
-                        << ("(" + d->attack_list[0]->team_config->team[1]->c_point->get_name() + "_" + d->attack_list[0]->team_config->team[1]->w_point->get_name() + "_" + d->attack_list[0]->team_config->team[1]->suit1->get_name() + "_" + d->attack_list[0]->team_config->team[1]->suit2->get_name() + ")")
-                        << ("(" + d->attack_list[0]->team_config->team[2]->c_point->get_name() + "_" + d->attack_list[0]->team_config->team[2]->w_point->get_name() + "_" + d->attack_list[0]->team_config->team[2]->suit1->get_name() + "_" + d->attack_list[0]->team_config->team[2]->suit2->get_name() + ")")
-                        << ("(" + d->attack_list[0]->team_config->team[3]->c_point->get_name() + "_" + d->attack_list[0]->team_config->team[3]->w_point->get_name() + "_" + d->attack_list[0]->team_config->team[3]->suit1->get_name() + "_" + d->attack_list[0]->team_config->team[3]->suit2->get_name() + ")") << ","
-                        << d->attack_list[0]->self->w_point->get_name() << ","
-                        << d->attack_list[0]->self->suit1->get_name() << ","
-                        << d->attack_list[0]->self->suit2->get_name() << ","
-                        << d->attack_list[0]->self->a_main3 << ","
-                        << d->attack_list[0]->self->a_main4 << ","
-                        << d->attack_list[0]->self->a_main5 << ","
+                outfile << d->self->c_point->get_name() << ","
+                        << ("(" + d->team_config->team[0]->c_point->get_name() + "_" + d->team_config->team[0]->w_point->get_name() + "_" + d->team_config->team[0]->suit1->get_name() + "_" + d->team_config->team[0]->suit2->get_name() + ")")
+                        << ("(" + d->team_config->team[1]->c_point->get_name() + "_" + d->team_config->team[1]->w_point->get_name() + "_" + d->team_config->team[1]->suit1->get_name() + "_" + d->team_config->team[1]->suit2->get_name() + ")")
+                        << ("(" + d->team_config->team[2]->c_point->get_name() + "_" + d->team_config->team[2]->w_point->get_name() + "_" + d->team_config->team[2]->suit1->get_name() + "_" + d->team_config->team[2]->suit2->get_name() + ")")
+                        << ("(" + d->team_config->team[3]->c_point->get_name() + "_" + d->team_config->team[3]->w_point->get_name() + "_" + d->team_config->team[3]->suit1->get_name() + "_" + d->team_config->team[3]->suit2->get_name() + ")") << ","
+                        << d->self->w_point->get_name() << ","
+                        << d->self->suit1->get_name() << ","
+                        << d->self->suit2->get_name() << ","
+                        << d->self->a_main3 << ","
+                        << d->self->a_main4 << ","
+                        << d->self->a_main5 << ","
                         << d->total_damage << ","
                         << d->total_damage / total_damage_baseline << ","
-                        << d->entry_num.data["生命值"] << ","
-                        << d->entry_num.data["攻击力"] << ","
-                        << d->entry_num.data["防御力"] << ","
-                        << d->entry_num.data["元素精通"] << ","
-                        << d->entry_num.data["元素充能效率"] << ","
-                        << d->entry_num.data["暴击率"] << ","
-                        << d->entry_num.data["暴击伤害"] << "\n";
+                        << d->entry_num.get("生命值") << ","
+                        << d->entry_num.get("攻击力") << ","
+                        << d->entry_num.get("防御力") << ","
+                        << d->entry_num.get("元素精通") << ","
+                        << d->entry_num.get("元素充能效率") << ","
+                        << d->entry_num.get("暴击率") << ","
+                        << d->entry_num.get("暴击伤害") << "\n";
                 delete d;
             }
         }

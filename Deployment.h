@@ -65,6 +65,8 @@ struct Team_Config
                 double rotation_time_);
 
     ~Team_Config();
+
+    Character *get_front(double time_point);
 };
 
 class Single_Attack
@@ -78,7 +80,6 @@ public:
     int base_atk = 0;
     int base_def = 0;
     double base_skillrate = 0;
-    attribute_data<int> useful;
     attribute_data<double> percentage;
     mutable attribute_data<double> converted_percentage;
 
@@ -86,7 +87,7 @@ public:
                   Team_Config *team_config_,
                   Attack_Config *attack_config_);
 
-    void get_data(bool &suit1_valid, bool &suit2_valid, bool &main3_valid, bool &main4_valid, bool &main5_valid, double min_recharge);
+    tuple<attribute_data<int>, bool, bool, bool, bool, bool> get_data(double min_recharge);
 
     double cal_damage(const attribute_data<double> &entry_value, double min_recharge) const;
 
@@ -98,16 +99,27 @@ private:
 
 class Deployment
 {
-public:
+private:
     vector<Single_Attack *> attack_list;
     //get_all_data
     double min_recharge = 0;
     attribute_data<int> collected_useful;
+
+public:
+    Combination *self;
+    Team_Config *team_config;
     //cal_optimal_entry_num
     attribute_data<int> entry_num;
     double total_damage = 0;
 
-    Deployment(Combination *self_, Team_Config *team_config_);
+    Deployment(Character *c_point_,
+               Weapon *w_point_,
+               Artifact *suit1_,
+               Artifact *suit2_,
+               string a_main3_,
+               string a_main4_,
+               string a_main5_,
+               Team_Config *team_config_);
 
     ~Deployment();
 
