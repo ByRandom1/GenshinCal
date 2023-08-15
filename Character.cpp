@@ -316,7 +316,23 @@ attribute_data<double> Hutao::get_panel_convert(const Single_Attack *single_atta
             single_attack->attack_config->action == "hit" &&
             check_time_constrain(i.first, i.second, single_attack->attack_config->attack_time, single_attack->team_config->rotation_time))
         {
-            result = result + attribute_data("攻击力", min(panel.get("生命值") * 0.0626 * single_attack->base_life / single_attack->base_atk, 4.0));
+            //TODO:锁的是E后第一次攻击的面板，不准确
+            bool first_attack = false;
+            for (auto j: single_attack->team_config->rotation)
+            {
+                //启动检测
+                if (j->c_point == this && j->action == "release" && j->attack_way == "E" && j->attack_time == i.first) first_attack = true;
+                    //第一次攻击
+                else if (first_attack && j->c_point == this && j->action == "hit")
+                {
+                    if (j == single_attack->attack_config) first_attack = true;
+                    else first_attack = false;
+                    break;
+                }
+            }
+            if (first_attack) E_atk_buff = min(panel.get("生命值") * 0.0626 * single_attack->base_life / single_attack->base_atk, 4.0);
+
+            result = result + attribute_data("攻击力", E_atk_buff);
             break;
         }
     return result;
@@ -516,8 +532,7 @@ tuple<attribute_data<double>, attribute_data<double>> Alhaitham::get_buff(const 
     if (constellation >= 6)
     {
         auto mirror_time = get_mirror_time(single_attack);
-        stable_sort(mirror_time.begin(), mirror_time.end(), [](pair<int, double> a, pair<int, double> b)
-        { return a.second < b.second; });
+        stable_sort(mirror_time.begin(), mirror_time.end(), [](pair<int, double> a, pair<int, double> b) { return a.second < b.second; });
         //超出上限在vector中呈现出 1、.second相等 2、+在前-在后且连续
         //TODO:下一个循环可能触发末尾buff的延长
         vector<pair<double, double>> time_range;

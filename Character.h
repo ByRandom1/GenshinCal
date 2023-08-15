@@ -49,7 +49,7 @@ protected:
     int E_level;
     int Q_level;
     int constellation;
-    //TODO:lockface的处理
+    //TODO:技能lockface的处理（主要是胡桃2命、艾尔海森Q、神里绫华Q、甘雨EQ、香菱EQ）
 
 public:
     Character(string name_,
@@ -152,6 +152,8 @@ public:
     double get_extra_rate(const Single_Attack *single_attack, attribute_data<double> panel) override;
 
 private:
+    double E_atk_buff = -1;
+
     vector<pair<double, double>> get_E_time(const Single_Attack *single_attack);
 };
 

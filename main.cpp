@@ -288,6 +288,57 @@ string a_main3[5] = {"生命值", "攻击力", "防御力", "元素精通", "元
 string a_main4[5] = {"生命值", "攻击力", "防御力", "元素精通", "伤害加成"};
 string a_main5[7] = {"生命值", "攻击力", "防御力", "元素精通", "暴击率", "暴击伤害", "治疗加成"};
 
+bool eliminate_choice(Character *c_index, Weapon *w_index, int suit1_index, int suit2_index, int main3_index, int main4_index, int main5_index)
+{
+    //Weapon
+    if (c_index->get_weapon_type() != w_index->get_weapon_type()) return false;
+    //Artifact
+    if (suit1_index > suit2_index) return false;
+    if (Artifact_list[suit1_index] != Artifact_list[suit2_index])
+    {
+        //18%攻击 追忆+（角斗）
+        if ((Artifact_list[suit1_index]->get_name() == "角斗士的终幕礼" && Artifact_list[suit2_index]->get_name() != "追忆之注连") ||
+            (Artifact_list[suit2_index]->get_name() == "角斗士的终幕礼" && Artifact_list[suit1_index]->get_name() != "追忆之注连"))
+            return false;
+        if (Artifact_list[suit1_index]->get_name() == "辰砂往生录" || Artifact_list[suit2_index]->get_name() == "辰砂往生录")
+            return false;
+        if (Artifact_list[suit1_index]->get_name() == "来歆余响" || Artifact_list[suit2_index]->get_name() == "来歆余响")
+            return false;
+        //25%物理伤害 苍白+（染血）
+        if ((Artifact_list[suit1_index]->get_name() == "染血的骑士道" && Artifact_list[suit2_index]->get_name() != "苍白之火") ||
+            (Artifact_list[suit2_index]->get_name() == "染血的骑士道" && Artifact_list[suit1_index]->get_name() != "苍白之火"))
+            return false;
+        //15%治疗加成 海染+（少女）
+        if ((Artifact_list[suit1_index]->get_name() == "被怜爱的少女" && Artifact_list[suit2_index]->get_name() != "海染砗磲") ||
+            (Artifact_list[suit2_index]->get_name() == "被怜爱的少女" && Artifact_list[suit1_index]->get_name() != "海染砗磲"))
+            return false;
+        //80元素精通 饰金+（乐团）
+        if ((Artifact_list[suit1_index]->get_name() == "流浪大地的乐团" && Artifact_list[suit2_index]->get_name() != "饰金之梦") ||
+            (Artifact_list[suit2_index]->get_name() == "流浪大地的乐团" && Artifact_list[suit1_index]->get_name() != "饰金之梦"))
+            return false;
+        if (Artifact_list[suit1_index]->get_name() == "乐园遗落之花" || Artifact_list[suit2_index]->get_name() == "乐园遗落之花")
+            return false;
+        //15%风伤 翠绿+（沙上）
+        if ((Artifact_list[suit1_index]->get_name() == "沙上楼阁史话" && Artifact_list[suit2_index]->get_name() != "翠绿之影") ||
+            (Artifact_list[suit2_index]->get_name() == "沙上楼阁史话" && Artifact_list[suit1_index]->get_name() != "翠绿之影"))
+            return false;
+        //15%水伤 水仙+（沉沦）
+        if ((Artifact_list[suit1_index]->get_name() == "沉沦之心" && Artifact_list[suit2_index]->get_name() != "水仙之梦") ||
+            (Artifact_list[suit2_index]->get_name() == "沉沦之心" && Artifact_list[suit1_index]->get_name() != "水仙之梦"))
+            return false;
+        //20%生命 千岩+（花海）
+        if ((Artifact_list[suit1_index]->get_name() == "花海甘露之光" && Artifact_list[suit2_index]->get_name() != "千岩牢固") ||
+            (Artifact_list[suit2_index]->get_name() == "花海甘露之光" && Artifact_list[suit1_index]->get_name() != "千岩牢固"))
+            return false;
+    }
+    //main
+    if (main3_index < 4 && main4_index < main3_index) return false;
+    if (main4_index < 4 && main5_index < main4_index) return false;
+    else if (main4_index == 4 && main3_index < 4 && main5_index < main3_index) return false;
+
+    return true;
+}
+
 void cal_optimal_combination(Config_File *config)
 {
     ofstream outfile;
@@ -301,26 +352,25 @@ void cal_optimal_combination(Config_File *config)
         vector<Deployment *> out;
         auto total_start = chrono::system_clock::now();
 
-        auto c_index = i->c_point;
         for (auto &w_index: Weapon_list)
         {
-            if (c_index->get_weapon_type() != w_index->get_weapon_type()) continue;
-
             vector<Deployment *> c_w_pair;
             vector<thread> ths;
             auto start = chrono::system_clock::now();
 
             for (int s1_index = 0; s1_index < Artifact_list.size(); ++s1_index)
             {
-                for (int s2_index = s1_index; s2_index < Artifact_list.size(); ++s2_index)
+                for (int s2_index = 0; s2_index < Artifact_list.size(); ++s2_index)
                 {
                     for (int m3_index = 0; m3_index < 5; m3_index++)
                     {
-                        for (int m4_index = (m3_index == 4) ? 0 : m3_index; m4_index < 5; m4_index++)
+                        for (int m4_index = 0; m4_index < 5; m4_index++)
                         {
-                            for (int m5_index = (m4_index == 4) ? ((m3_index == 4) ? 0 : m3_index) : m4_index; m5_index < 7; m5_index++)
+                            for (int m5_index = 0; m5_index < 7; m5_index++)
                             {
-                                auto temp = new Deployment(c_index, w_index, Artifact_list[s1_index], Artifact_list[s2_index],
+                                if (eliminate_choice(i->c_point, w_index, s1_index, s2_index, m3_index, m4_index, m5_index)) continue;
+
+                                auto temp = new Deployment(i->c_point, w_index, Artifact_list[s1_index], Artifact_list[s2_index],
                                                            a_main3[m3_index], a_main4[m4_index], a_main5[m5_index], config->team_config);
                                 int check_num = temp->get_all_data();
                                 if (check_num == 0)//pass
@@ -375,7 +425,7 @@ void cal_optimal_combination(Config_File *config)
                     else delete c_w;
             }
 
-            cout << c_index->get_name() << " " << w_index->get_name() << " " << " time=" << time.count() << "s" << ((time.count() > 30) ? "!!!" : "") << endl;
+            cout << i->c_point->get_name() << " " << w_index->get_name() << " " << " time=" << time.count() << "s" << ((time.count() > 30) ? "!!!" : "") << endl;
         }
 
         chrono::duration<double> total_time = chrono::system_clock::now() - total_start;

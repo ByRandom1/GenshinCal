@@ -49,8 +49,7 @@ Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Comb
     team[3] = c4;
     heal_or_shield = std::move(heal_or_shield_);
     rotation = std::move(rotation_);
-    stable_sort(rotation.begin(), rotation.end(), [](Attack_Config *a, Attack_Config *b)
-    { return a->attack_time < b->attack_time; });
+    stable_sort(rotation.begin(), rotation.end(), [](Attack_Config *a, Attack_Config *b) { return a->attack_time < b->attack_time; });
     rotation_time = rotation_time_;
 }
 
@@ -123,25 +122,15 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
     percentage = percentage + result;
     converted_percentage = converted_percentage + converted;
 
-    if (self->suit1 == self->suit2)
-    {
-        tie(result, converted) = self->suit1->get_buff(this);
-        suit1_valid = suit2_valid = judge_useful(useful, result + converted);
-        percentage = percentage + result;
-        converted_percentage = converted_percentage + converted;
-    }
-    else
-    {
-        tie(result, converted) = self->suit1->get_buff(this);
-        suit1_valid = judge_useful(useful, result + converted);
-        percentage = percentage + result;
-        converted_percentage = converted_percentage + converted;
+    tie(result, converted) = self->suit1->get_buff(this, true, self->suit1 == self->suit2);
+    suit1_valid = suit2_valid = judge_useful(useful, result + converted);
+    percentage = percentage + result;
+    converted_percentage = converted_percentage + converted;
 
-        tie(result, converted) = self->suit2->get_buff(this);
-        suit2_valid = judge_useful(useful, result + converted);
-        percentage = percentage + result;
-        converted_percentage = converted_percentage + converted;
-    }
+    tie(result, converted) = self->suit2->get_buff(this, true, false);
+    if (self->suit1 != self->suit2) suit2_valid = judge_useful(useful, result + converted);
+    percentage = percentage + result;
+    converted_percentage = converted_percentage + converted;
 
     //get entry
     percentage = percentage + attribute_data("生命值", 4780.0 / base_life);
@@ -187,7 +176,7 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
             }
             if (i->suit1 != nullptr)
             {
-                tie(result, converted) = i->suit1->get_buff(this);
+                tie(result, converted) = i->suit1->get_buff(this, false, i->suit1 == i->suit2);
                 percentage = percentage + result;
                 converted_percentage = converted_percentage + converted;
             }
