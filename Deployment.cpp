@@ -3,6 +3,7 @@
 //
 
 #include "Deployment.h"
+#include "Config_File.h"
 
 #include <utility>
 
@@ -39,7 +40,6 @@ Attack_Config::Attack_Config(Character *c_point_,
 }
 
 Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
-                         string heal_or_shield_,
                          vector<Attack_Config *> rotation_,
                          double rotation_time_)
 {
@@ -47,8 +47,10 @@ Team_Config::Team_Config(Combination *c1, Combination *c2, Combination *c3, Comb
     team[1] = c2;
     team[2] = c3;
     team[3] = c4;
-    heal_or_shield = std::move(heal_or_shield_);
     rotation = std::move(rotation_);
+    for (auto i: rotation)
+        if (i->attack_time > rotation_time)
+            i->attack_time -= rotation_time;
     stable_sort(rotation.begin(), rotation.end(), [](Attack_Config *a, Attack_Config *b) { return a->attack_time < b->attack_time; });
     rotation_time = rotation_time_;
 }
@@ -73,6 +75,15 @@ Character *Team_Config::get_front(double time_point)
         if (i->action == "switch") front = i->c_point;
     }
     return front;
+}
+
+bool Team_Config::get_shield(double time_point)
+{
+    for (auto i: rotation)
+        if (i->c_point == find_character_by_name("钟离") && i->action == "release" && i->attack_way == "E")
+            if (check_time_constrain(i->attack_time, i->attack_time + 20, time_point, rotation_time))
+                return true;
+    return false;
 }
 
 Single_Attack::Single_Attack(Combination *self_,
@@ -118,19 +129,22 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
     percentage = percentage + result;
     converted_percentage = converted_percentage + converted;
 
-    tie(result, converted) = self->w_point->get_buff(this);
+    tie(result, converted) = self->w_point->get_buff(this, self->c_point);
     percentage = percentage + result;
     converted_percentage = converted_percentage + converted;
 
-    tie(result, converted) = self->suit1->get_buff(this, true, self->suit1 == self->suit2);
+    tie(result, converted) = self->suit1->get_buff(this, self->c_point, self->suit1 == self->suit2);
     suit1_valid = suit2_valid = judge_useful(useful, result + converted);
     percentage = percentage + result;
     converted_percentage = converted_percentage + converted;
 
-    tie(result, converted) = self->suit2->get_buff(this, true, false);
+    tie(result, converted) = self->suit2->get_buff(this, self->c_point, false);
     if (self->suit1 != self->suit2) suit2_valid = judge_useful(useful, result + converted);
     percentage = percentage + result;
     converted_percentage = converted_percentage + converted;
+
+    //TODO:默认四件套有效
+    if (self->suit1 == self->suit2) suit1_valid = suit2_valid = true;
 
     //get entry
     percentage = percentage + attribute_data("生命值", 4780.0 / base_life);
@@ -170,13 +184,13 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
             converted_percentage = converted_percentage + converted;
             if (i->w_point != nullptr)
             {
-                tie(result, converted) = i->w_point->get_buff(this);
+                tie(result, converted) = i->w_point->get_buff(this, i->c_point);
                 percentage = percentage + result;
                 converted_percentage = converted_percentage + converted;
             }
             if (i->suit1 != nullptr)
             {
-                tie(result, converted) = i->suit1->get_buff(this, false, i->suit1 == i->suit2);
+                tie(result, converted) = i->suit1->get_buff(this, i->c_point, i->suit1 == i->suit2);
                 percentage = percentage + result;
                 converted_percentage = converted_percentage + converted;
             }
@@ -242,17 +256,17 @@ attribute_data<double> Single_Attack::get_team_bonus() const
     if (team_ele_num["火"] >= 2) result = result + attribute_data("攻击力", 0.25);
     if (team_ele_num["冰"] >= 2)
     {
-        bool has_ice = ((team_ele_num["火"] == 0) && (team_ele_num["雷"] < team_ele_num["冰"]));//TODO:更精准的判断元素附着
+        bool has_ice = ((team_ele_num["火"] == 0) && (team_ele_num["雷"] < team_ele_num["冰"]));//TODO:更精准地判断元素附着
         if (has_ice) result = result + attribute_data("暴击率", 0.15);
     }
     if (team_ele_num["岩"] >= 2)
     {
         result = result + attribute_data("护盾强效", 0.15);
-        if ("shield" <= team_config->heal_or_shield)
+        if (attack_config->action == "hit" &&
+            team_config->get_shield(attack_config->attack_time))
         {
             result = result + attribute_data("伤害加成", 0.15);
-            if (attack_config->action == "hit" &&
-                attack_config->c_point->get_attack_ele_type(this) == "岩")
+            if (attack_config->c_point->get_attack_ele_type(this) == "岩")
                 result = result + attribute_data("抗性削弱", 0.2);
         }
     }
@@ -409,13 +423,13 @@ int Deployment::get_all_data()
         Q_energy_modify += temp_Q_energy_modify;
         energy += temp_energy;
 
-        if (i->c_point == self->c_point) tie(temp_Q_energy_modify, temp_energy) = self->w_point->get_recharge(attack_list[0]);
-        else if (i->w_point != nullptr) tie(temp_Q_energy_modify, temp_energy) = i->w_point->get_recharge(attack_list[0]);
+        if (i->c_point == self->c_point) tie(temp_Q_energy_modify, temp_energy) = self->w_point->get_recharge(attack_list[0], self->c_point);
+        else if (i->w_point != nullptr) tie(temp_Q_energy_modify, temp_energy) = i->w_point->get_recharge(attack_list[0], i->c_point);
         Q_energy_modify += temp_Q_energy_modify;
         energy += temp_energy;
 
-        if (i->c_point == self->c_point) tie(temp_Q_energy_modify, temp_energy) = self->suit1->get_recharge(attack_list[0]);
-        else if (i->suit1 != nullptr) tie(temp_Q_energy_modify, temp_energy) = i->suit1->get_recharge(attack_list[0]);
+        if (i->c_point == self->c_point) tie(temp_Q_energy_modify, temp_energy) = self->suit1->get_recharge(attack_list[0], self->c_point);
+        else if (i->suit1 != nullptr) tie(temp_Q_energy_modify, temp_energy) = i->suit1->get_recharge(attack_list[0], i->c_point);
         Q_energy_modify += temp_Q_energy_modify;
         energy += temp_energy;
     }

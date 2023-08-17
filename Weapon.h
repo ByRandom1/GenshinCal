@@ -7,6 +7,8 @@
 
 #include "Basic_Elements.h"
 
+class Character;
+
 class Single_Attack;
 
 class Config_File;
@@ -40,11 +42,11 @@ public:
 
     attribute_data<double> get_break(const string& ele_type);
 
-    virtual tuple<double, double> get_recharge(const Single_Attack *single_attack);
+    virtual tuple<double, double> get_recharge(const Single_Attack *single_attack, const Character *owner);
 
     virtual attribute_data<int> get_useful_attribute(const Single_Attack *single_attack);
 
-    virtual tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack);
+    virtual tuple<attribute_data<double>, attribute_data<double>> get_buff(const Single_Attack *single_attack, const Character *owner);
 
     virtual attribute_data<double> get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel);
 

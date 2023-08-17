@@ -84,7 +84,7 @@ public:
 
     string get_name();
 
-    string get_ele_type();
+    string get_ele_type() const;
 
     string get_weapon_type();
 

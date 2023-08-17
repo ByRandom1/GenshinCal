@@ -37,13 +37,13 @@ attribute_data<double> Weapon::get_break(const string &ele_type)
     else return break_value;
 }
 
-tuple<double, double> Weapon::get_recharge(const Single_Attack *single_attack)
+tuple<double, double> Weapon::get_recharge(const Single_Attack *single_attack, const Character *owner)
 { return make_tuple(0, 0); }
 
 attribute_data<int> Weapon::get_useful_attribute(const Single_Attack *single_attack)
 { return {}; }
 
-tuple<attribute_data<double>, attribute_data<double>> Weapon::get_buff(const Single_Attack *single_attack)
+tuple<attribute_data<double>, attribute_data<double>> Weapon::get_buff(const Single_Attack *single_attack, const Character *owner)
 { return make_tuple(attribute_data<double>(), attribute_data<double>()); }
 
 attribute_data<double> Weapon::get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel)

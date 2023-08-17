@@ -38,7 +38,7 @@ struct Combination
 struct Attack_Config
 {
     Character *c_point;
-    string action;//switch release hit 组成 rotation
+    string action;//switch release hit hp_change 组成 rotation
     string attack_way;
     int rate_pos;
     string react_type;
@@ -55,18 +55,18 @@ struct Attack_Config
 struct Team_Config
 {
     Combination *team[4];
-    string heal_or_shield;
     vector<Attack_Config *> rotation;
     double rotation_time;
 
     Team_Config(Combination *c1, Combination *c2, Combination *c3, Combination *c4,
-                string heal_or_shield_,
                 vector<Attack_Config *> rotation_,
                 double rotation_time_);
 
     ~Team_Config();
 
     Character *get_front(double time_point);
+
+    bool get_shield(double time_point);
 };
 
 class Single_Attack

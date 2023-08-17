@@ -34,8 +34,6 @@ Config_File::Config_File(string team_name_, vector<string> file)
 
     Character *ch[4];
     Combination *team[4];
-    bool heal = false;
-    bool shield = false;
     vector<Attack_Config *> total;
     double rotation_time;
 
@@ -87,8 +85,6 @@ Config_File::Config_File(string team_name_, vector<string> file)
                 {
                     map<string, string> params = get_params(info, '=');
                     team[pos] = new Combination(ch[pos], find_weapon_by_name(params["weapon"]), find_artifact_by_name(params["suit1"]), find_artifact_by_name(params["suit2"]), "", "", "");
-                    heal = heal || ("heal" <= params["heal_or_shield"]);
-                    shield = shield || ("shield" <= params["heal_or_shield"]);
                 }
                 else if (info[2] == "attack_config")
                 {
@@ -100,7 +96,7 @@ Config_File::Config_File(string team_name_, vector<string> file)
         index++;
     }
 
-    team_config = new Team_Config(team[0], team[1], team[2], team[3], (heal ? string("heal") : "") + (shield ? string("shield") : ""), total, rotation_time);
+    team_config = new Team_Config(team[0], team[1], team[2], team[3], total, rotation_time);
 }
 
 Config_File::~Config_File()
@@ -129,10 +125,10 @@ string Config_File::generate_sample_config()
     result += "rotation_end\n";
     result += "ATTACK_SCRIPT END\n";
     result += "\n";
-    result += "A add team_combination weapon= suit1= suit2= heal_or_shield=\n";
-    result += "B add team_combination weapon= suit1= suit2= heal_or_shield=\n";
-    result += "C add team_combination weapon= suit1= suit2= heal_or_shield=\n";
-    result += "D add team_combination weapon= suit1= suit2= heal_or_shield=\n";
+    result += "A add team_combination weapon= suit1= suit2=\n";
+    result += "B add team_combination weapon= suit1= suit2=\n";
+    result += "C add team_combination weapon= suit1= suit2=\n";
+    result += "D add team_combination weapon= suit1= suit2=\n";
     result += "A/B/C/D add attack_config action= attack_way= rate_pos= react_type= attack_time=";
     return result;
 }

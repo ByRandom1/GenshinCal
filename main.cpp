@@ -281,7 +281,36 @@ Artifact *find_artifact_by_name(const string &name)
 
 void init_Artifact_list()
 {
-
+    Artifact_list.push_back(new YueTuan());
+    Artifact_list.push_back(new JueDou());
+    Artifact_list.push_back(new BingTao());
+    Artifact_list.push_back(new ShuiTao());
+    Artifact_list.push_back(new PanYan());
+    Artifact_list.push_back(new NiFei());
+    Artifact_list.push_back(new RanXue());
+    Artifact_list.push_back(new ZongShi());
+    Artifact_list.push_back(new FengTao());
+    Artifact_list.push_back(new ShaoNv());
+    Artifact_list.push_back(new CangBai());
+    Artifact_list.push_back(new QianYan());
+    Artifact_list.push_back(new MoNv());
+    Artifact_list.push_back(new DuHuo());
+    Artifact_list.push_back(new RuLei());
+    Artifact_list.push_back(new PingLei());
+    Artifact_list.push_back(new ZhuiYi());
+    Artifact_list.push_back(new JueYuan());
+    Artifact_list.push_back(new HuaGuan());
+    Artifact_list.push_back(new HaiRan());
+    Artifact_list.push_back(new ChenSha());
+    Artifact_list.push_back(new YuXiang());
+    Artifact_list.push_back(new CaoTao());
+    Artifact_list.push_back(new ShiJin());
+    Artifact_list.push_back(new LouGe());
+    Artifact_list.push_back(new LeYuan());
+    Artifact_list.push_back(new ShuiXian());
+    Artifact_list.push_back(new HuaHai());
+    Artifact_list.push_back(new ZhuYing());
+    Artifact_list.push_back(new JuTuan());
 }
 
 string a_main3[5] = {"生命值", "攻击力", "防御力", "元素精通", "元素充能效率"};

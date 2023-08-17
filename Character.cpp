@@ -80,7 +80,7 @@ Character::Character(string name_,
 string Character::get_name()
 { return name; }
 
-string Character::get_ele_type()
+string Character::get_ele_type() const
 { return ele_type; }
 
 string Character::get_weapon_type()
@@ -165,7 +165,7 @@ attribute_data<int> Character::get_useful_attribute(const Single_Attack *single_
     if (single_attack->attack_config->c_point == this &&
         single_attack->attack_config->action == "hit")
     {
-        if (single_attack->attack_config->attack_way == "平A" || single_attack->attack_config->attack_way == "重A" || single_attack->attack_config->attack_way == "下落A") return A_useful_attributes;
+        if ("A" <= single_attack->attack_config->attack_way) return A_useful_attributes;
         else if (single_attack->attack_config->attack_way == "E") return E_useful_attributes;
         else if (single_attack->attack_config->attack_way == "Q") return Q_useful_attributes;
     }
@@ -247,7 +247,7 @@ tuple<double, double> Hutao::get_recharge(const Single_Attack *single_attack)
     auto E_time = get_E_time(single_attack);
     double last_A_generate = -5;
     for (auto i: single_attack->team_config->rotation)
-        if (i->c_point == this && i->action == "hit" && (i->attack_way == "平A" || i->attack_way == "重A") && i->attack_time >= last_A_generate + 5)
+        if (i->c_point == this && i->action == "hit" && i->attack_way <= "平A_重A" && i->attack_time >= last_A_generate + 5)
             for (auto &j: E_time)
                 if (check_time_constrain(j.first, j.second, i->attack_time, single_attack->team_config->rotation_time))
                 {
@@ -298,10 +298,14 @@ tuple<attribute_data<double>, attribute_data<double>> Hutao::get_buff(const Sing
             break;
         }
     //talent 2
+    int life_change = 0;
+    for (auto i: single_attack->team_config->rotation)
+        if (i->c_point == this && i->action == "hp_change")
+            life_change += i->rate_pos;
     if (single_attack->attack_config->c_point == this &&
         single_attack->attack_config->action == "hit" &&
         single_attack->attack_config->c_point->get_attack_ele_type(single_attack) == "火" &&
-        !("heal" <= single_attack->team_config->heal_or_shield))
+        life_change <= -12)
         result = result + attribute_data("伤害加成", 0.33);
     return make_tuple(result, converted);
 }
@@ -316,7 +320,7 @@ attribute_data<double> Hutao::get_panel_convert(const Single_Attack *single_atta
             single_attack->attack_config->action == "hit" &&
             check_time_constrain(i.first, i.second, single_attack->attack_config->attack_time, single_attack->team_config->rotation_time))
         {
-            //TODO:锁的是E后第一次攻击的面板，不准确
+            //TODO:不准确，锁的是E后第一次攻击的面板
             bool first_attack = false;
             for (auto j: single_attack->team_config->rotation)
             {
@@ -405,7 +409,7 @@ vector<pair<int, double>> Alhaitham::get_mirror_time(const Single_Attack *single
             if (total_mirror != 0) result.emplace_back(-total_mirror, i->attack_time);
         }
         //talent 1
-        if (i->c_point == this && i->action == "hit" && (i->attack_way == "重A" || i->attack_way == "下落A") && i->attack_time >= last_A_generate + 12)
+        if (i->c_point == this && i->action == "hit" && i->attack_way <= "重A_下落A" && i->attack_time >= last_A_generate + 12)
         {
             int total_mirror = get_mirror_num(result, i->attack_time);
             if (total_mirror == 3)
@@ -576,7 +580,7 @@ attribute_data<double> Alhaitham::get_total_convert(const Single_Attack *single_
     //talent 2
     if (single_attack->attack_config->c_point == this &&
         single_attack->attack_config->action == "hit" &&
-        (single_attack->attack_config->attack_way == "E" || single_attack->attack_config->attack_way == "Q"))
+        single_attack->attack_config->attack_way <= "E_Q")
         result = result + attribute_data("伤害加成", min(panel.get("元素精通") * 0.001, 1.0));
     return result;
 }
@@ -791,7 +795,7 @@ tuple<attribute_data<double>, attribute_data<double>> Ayaka::get_buff(const Sing
         if (i->c_point == this && i->action == "hit" && i->attack_way == "E")
             if (single_attack->attack_config->c_point == this &&
                 single_attack->attack_config->action == "hit" &&
-                (single_attack->attack_config->attack_way == "平A" || single_attack->attack_config->attack_way == "重A") &&
+                single_attack->attack_config->attack_way <= "平A_重A" &&
                 check_time_constrain(i->attack_time, i->attack_time + 6, single_attack->attack_config->attack_time, single_attack->team_config->rotation_time))
             {
                 result = result + attribute_data("伤害加成", 0.3);
@@ -1535,7 +1539,7 @@ string Kazuha::get_attack_ele_type(const Single_Attack *single_attack)
     if (constellation >= 6)
     {
         for (auto i: single_attack->team_config->rotation)
-            if (i->c_point == this && i->action == "release" && (i->attack_way == "E" || i->attack_way == "Q"))
+            if (i->c_point == this && i->action == "release" && i->attack_way <= "E_Q")
                 if (single_attack->attack_config->c_point == this &&
                     single_attack->attack_config->action == "hit" &&
                     "A" <= single_attack->attack_config->attack_way &&
@@ -1567,7 +1571,7 @@ attribute_data<int> Kazuha::get_useful_attribute(const Single_Attack *single_att
     if (constellation >= 6)
     {
         for (auto i: single_attack->team_config->rotation)
-            if (i->c_point == this && i->action == "release" && (i->attack_way == "E" || i->attack_way == "Q"))
+            if (i->c_point == this && i->action == "release" && i->attack_way <= "E_Q")
                 if (single_attack->attack_config->c_point == this &&
                     single_attack->attack_config->action == "hit" &&
                     "A" <= single_attack->attack_config->attack_way &&
@@ -1628,7 +1632,7 @@ attribute_data<double> Kazuha::get_total_convert(const Single_Attack *single_att
     if (constellation >= 6)
     {
         for (auto i: single_attack->team_config->rotation)
-            if (i->c_point == this && i->action == "release" && (i->attack_way == "E" || i->attack_way == "Q"))
+            if (i->c_point == this && i->action == "release" && i->attack_way <= "E_Q")
                 if (single_attack->attack_config->c_point == this &&
                     single_attack->attack_config->action == "hit" &&
                     "A" <= single_attack->attack_config->attack_way &&
@@ -1733,7 +1737,7 @@ double Mona::get_react_damplus(const Single_Attack *single_attack, string react_
                 if (i->action == "hit" &&
                     check_time_constrain(j.first, j.second, i->attack_time, single_attack->team_config->rotation_time) &&
                     single_attack->attack_config->action == "hit" &&
-                    (react_type == "感电" || react_type == "蒸发" || (react_type == "扩散" && "扩散水" <= single_attack->attack_config->react_type)) &&
+                    (react_type <= "感电_蒸发" || (react_type == "扩散" && "扩散水" <= single_attack->attack_config->react_type)) &&
                     check_time_constrain(i->attack_time, i->attack_time + 8, single_attack->attack_config->attack_time, single_attack->team_config->rotation_time))
                 {
                     result = result + 0.15;
