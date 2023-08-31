@@ -50,21 +50,14 @@ Config_File::Config_File(string team_name_, vector<string> file)
                 ch[2] = find_character_by_name(info[5]);
                 ch[3] = find_character_by_name(info[6]);
             }
-            else if (info[2] == "options")
-            {
-                for (int i = 3; i < info.size(); ++i)
-                    options = options + " " + info[i];
-                rotation_time = stod(get_params(info, '=')["duration"]) / 5;
-            }
-            else if (info[2] == "target")
-            {
-                for (int i = 3; i < info.size(); ++i)
-                    target = target + " " + info[i];
-            }
             else if (info[2] == "attack_script")
             {
                 while (file[++index] != "ATTACK_SCRIPT END")
                     attack_script.push_back(file[index]);
+            }
+            else if (info[2] == "rotation_time")
+            {
+                rotation_time = stod(info[3]);
             }
         }
         else
@@ -117,14 +110,13 @@ string Config_File::generate_sample_config()
     result += "B add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
     result += "C add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
     result += "D add gcsim_combination weapon= suit1= suit2= main3= main4= main5=\n";
-    result += "all add options \n";
-    result += "all add target \n";
     result += "all add attack_script\n";
     result += "rotation_start\n";
     result += "\n";
     result += "rotation_end\n";
     result += "ATTACK_SCRIPT END\n";
     result += "\n";
+    result += "all add rotation_time \n";
     result += "A add team_combination weapon= suit1= suit2=\n";
     result += "B add team_combination weapon= suit1= suit2=\n";
     result += "C add team_combination weapon= suit1= suit2=\n";

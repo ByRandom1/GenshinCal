@@ -305,7 +305,7 @@ tuple<attribute_data<double>, attribute_data<double>> Hutao::get_buff(const Sing
     if (single_attack->attack_config->c_point == this &&
         single_attack->attack_config->action == "hit" &&
         single_attack->attack_config->c_point->get_attack_ele_type(single_attack) == "火" &&
-        life_change <= -12)
+        life_change < 0)
         result = result + attribute_data("伤害加成", 0.33);
     return make_tuple(result, converted);
 }

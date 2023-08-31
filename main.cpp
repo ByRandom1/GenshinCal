@@ -95,10 +95,10 @@ void generate_gcsim_script(Config_File *config)
                 for (auto &D: config->gcsim[3])
                 {
                     outfile_run_substat_optimizer << R"(")" << win_data_path << R"(gcsim.exe" -c=")" << win_data_path << config->team_name << R"(\config\)" << config->team_name << "_" << to_string(filecount) << R"(.txt" -substatOptim=true -out=")" << win_data_path << config->team_name
-                                                  << R"(\optimized_config\)" << config->team_name << "_" << to_string(filecount) << R"(.txt" "-options="total_liquid_substats=30;indiv_liquid_cap=12;fixed_substats_count=0;"" & )";
+                                                  << R"(\optimized_config\)" << config->team_name << "_" << to_string(filecount) << R"(.txt" "-options="total_liquid_substats=)" << to_string(max_entry_num) << R"(;indiv_liquid_cap=)" << to_string((int) (max_attribute_num_per_pos * 5)) << R"(;fixed_substats_count=0;"" & )";
                     outfile_run_optimized_config << R"(")" << win_data_path << R"(gcsim.exe" -c=")" << win_data_path << config->team_name << R"(\optimized_config\)" << config->team_name << "_" << to_string(filecount) << R"(.txt" -out=")" << win_data_path << config->team_name << R"(\viewer_gz\)"
-                                                 << config->team_name << "_" << to_string(filecount) << R"(.json" -gz="true" "-options="total_liquid_substats=30;indiv_liquid_cap=12;fixed_substats_count=0;"" > )" << win_data_path << config->team_name << R"(\logs\)" << config->team_name << "_"
-                                                 << to_string(filecount) << ".txt & ";
+                                                 << config->team_name << "_" << to_string(filecount) << R"(.json" -gz="true" "-options="total_liquid_substats=)" << to_string(max_entry_num) << R"(;indiv_liquid_cap=)" << to_string((int) (max_attribute_num_per_pos * 5)) << R"(;fixed_substats_count=0;"" > )"
+                                                 << win_data_path << config->team_name << R"(\logs\)" << config->team_name << "_" << to_string(filecount) << ".txt & ";
 
                     //config
                     ofstream outfile;
@@ -178,22 +178,11 @@ void generate_gcsim_script(Config_File *config)
                     outfile << endl;
 
                     //options
-                    outfile << "options";
-                    if (!("iteration" <= config->options)) outfile << " iteration=10000";
-                    if (!("duration" <= config->options)) outfile << " duration=105";
-                    if (!("swap_delay" <= config->options)) outfile << " swap_delay=4";
-                    if (!config->options.empty()) outfile << " " << config->options;
-                    outfile << ";" << endl;
-
+                    outfile << "options iteration=1000 duration=90 swap_delay=4;" << endl;
+                    //energy
+                    outfile << "energy every interval=180 amount=1;" << endl;
                     //target
-                    outfile << "target";
-                    if (!("lvl" <= config->target)) outfile << " lvl=95";
-                    if (!("resist" <= config->target)) outfile << " resist=0.1";
-                    if (!("particle_threshold" <= config->target)) outfile << " particle_threshold=150000";
-                    if (!("particle_drop_count" <= config->target)) outfile << " particle_drop_count=1";
-                    if (!config->target.empty()) outfile << " " << config->target;
-                    outfile << ";" << endl;
-
+                    outfile << "target lvl=95 resist=0.1;" << endl;
                     outfile << endl;
 
                     //active
@@ -204,7 +193,7 @@ void generate_gcsim_script(Config_File *config)
                     //attack_list
                     for (auto &i: config->attack_script)
                     {
-                        if (i == "rotation_start") outfile << "for let x=0; x<5; x=x+1 {" << endl;
+                        if (i == "rotation_start") outfile << "while 1 {" << endl;
                         else if (i == "rotation_end") outfile << "}" << endl;
                         else
                         {
@@ -266,7 +255,53 @@ Weapon *find_weapon_by_name(const string &name)
 
 void init_Weapon_list()
 {
-
+    Weapon_list.push_back(new Sword_FengYing(1));
+    Weapon_list.push_back(new Sword_TianKong(1));
+    Weapon_list.push_back(new Sword_DunJian(1));
+    Weapon_list.push_back(new Sword_LvJian(1));
+    Weapon_list.push_back(new Sword_CangGu(1));
+    Weapon_list.push_back(new Sword_WuQie(1));
+    Weapon_list.push_back(new Sword_BoBo(1));
+    Weapon_list.push_back(new Sword_ShengXian(1, 45000));
+    Weapon_list.push_back(new Sword_CaiYe(1));
+    Weapon_list.push_back(new Sword_XiFeng(5));
+    Weapon_list.push_back(new Sword_XiFuSi(1, 500));
+    Weapon_list.push_back(new Claymore_LangMo(1));
+    Weapon_list.push_back(new Claymore_TianKong(1));
+    Weapon_list.push_back(new Claymore_WuGong(1));
+    Weapon_list.push_back(new Claymore_SongLai(1));
+    Weapon_list.push_back(new Claymore_ChiJiao(1));
+    Weapon_list.push_back(new Claymore_WeiHai(1));
+    Weapon_list.push_back(new Claymore_XiFeng(5));
+    Weapon_list.push_back(new Claymore_MaHaiLa(1, 500));
+    Weapon_list.push_back(new Polearm_HePuYuan(1));
+    Weapon_list.push_back(new Polearm_TianKong(1));
+    Weapon_list.push_back(new Polearm_DunQiang(1));
+    Weapon_list.push_back(new Polearm_HuMo(1));
+    Weapon_list.push_back(new Polearm_TiDao(1));
+    Weapon_list.push_back(new Polearm_XiZai(1));
+    Weapon_list.push_back(new Polearm_ChuanJiang(1));
+    Weapon_list.push_back(new Polearm_XiFeng(5));
+    Weapon_list.push_back(new Catalyst_SiFeng(1));
+    Weapon_list.push_back(new Catalyst_TianKong(1));
+    Weapon_list.push_back(new Catalyst_DunSuo(1));
+    Weapon_list.push_back(new Catalyst_YueHua(1));
+    Weapon_list.push_back(new Catalyst_ShenLe(1));
+    Weapon_list.push_back(new Catalyst_QianYe(1));
+    Weapon_list.push_back(new Catalyst_HuiYi(1));
+    Weapon_list.push_back(new Catalyst_BiLuo(1));
+    Weapon_list.push_back(new Catalyst_XiFeng(5));
+    Weapon_list.push_back(new Catalyst_BaiChen(5));
+    Weapon_list.push_back(new Catalyst_WanXing(1, 500));
+    Weapon_list.push_back(new Bow_AMS(1));
+    Weapon_list.push_back(new Bow_TianKong(1));
+    Weapon_list.push_back(new Bow_ZhongMo(1));
+    Weapon_list.push_back(new Bow_FeiLei(1));
+    Weapon_list.push_back(new Bow_DongJi(1));
+    Weapon_list.push_back(new Bow_RuoShui(1));
+    Weapon_list.push_back(new Bow_LieRen(1));
+    Weapon_list.push_back(new Bow_MoShu(1));
+    Weapon_list.push_back(new Bow_XiFeng(5));
 }
 
 vector<Artifact *> Artifact_list;

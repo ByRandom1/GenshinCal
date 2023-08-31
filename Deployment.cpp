@@ -113,9 +113,10 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
     attribute_data<double> converted;
 
     //modify useful
-    useful = self->c_point->get_useful_attribute(this) + self->w_point->get_useful_attribute(this) + self->suit1->get_useful_attribute(this);
+    useful = self->c_point->get_useful_attribute(this);
     if (!attack_config->react_type.empty()) useful = useful + attribute_data("元素精通", 1);
     if (min_recharge > 1.0) useful = useful + attribute_data("元素充能效率", 1);
+    useful = useful + self->w_point->get_useful_attribute(this, useful) + self->suit1->get_useful_attribute(this, useful);
 
     //get data
     base_life = self->c_point->get_life();
@@ -133,18 +134,17 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
     percentage = percentage + result;
     converted_percentage = converted_percentage + converted;
 
-    tie(result, converted) = self->suit1->get_buff(this, self->c_point, self->suit1 == self->suit2);
-    suit1_valid = suit2_valid = judge_useful(useful, result + converted);
+    bool check_piece4 = self->suit1 == self->suit2;
+    tie(result, converted) = self->suit1->get_buff(this, self->c_point, check_piece4);
+    suit1_valid = suit2_valid = judge_useful(useful, result + converted) || !check_piece4;
     percentage = percentage + result;
     converted_percentage = converted_percentage + converted;
 
-    tie(result, converted) = self->suit2->get_buff(this, self->c_point, false);
+    check_piece4 = false;
+    tie(result, converted) = self->suit2->get_buff(this, self->c_point, check_piece4);
     if (self->suit1 != self->suit2) suit2_valid = judge_useful(useful, result + converted);
     percentage = percentage + result;
     converted_percentage = converted_percentage + converted;
-
-    //TODO:默认四件套有效
-    if (self->suit1 == self->suit2) suit1_valid = suit2_valid = true;
 
     //get entry
     percentage = percentage + attribute_data("生命值", 4780.0 / base_life);
@@ -190,7 +190,8 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
             }
             if (i->suit1 != nullptr)
             {
-                tie(result, converted) = i->suit1->get_buff(this, i->c_point, i->suit1 == i->suit2);
+                bool check_team_piece4 = true;
+                tie(result, converted) = i->suit1->get_buff(this, i->c_point, check_team_piece4);
                 percentage = percentage + result;
                 converted_percentage = converted_percentage + converted;
             }
@@ -202,7 +203,6 @@ tuple<attribute_data<int>, bool, bool, bool, bool, bool> Single_Attack::get_data
 
 double Single_Attack::cal_damage(const attribute_data<double> &entry_value, double min_recharge) const
 {
-    //TODO:部分增伤并没有添加在面板上却参与了转化，目前没有增伤转别的：将所有添加的属性分为percentage,converted_percentage,monster_percentage
     attribute_data<double> panel = percentage + entry_value + attribute_data("暴击率", 0.08) + attribute_data("暴击伤害", 0.15);
     //get panel convert
     panel = panel + converted_percentage + self->c_point->get_panel_convert(this, panel) + self->w_point->get_panel_convert(this, panel) + self->suit1->get_panel_convert(this, panel);

@@ -113,7 +113,7 @@ public:
                     }
     */
 
-    //TODO:带有CD限制的能量产生会受上一循环影响，这里忽略
+    //带有CD限制的能量产生会受上一循环影响，这里忽略
     virtual tuple<double, double> get_recharge(const Single_Attack *single_attack);
 
     virtual attribute_data<int> get_useful_attribute(const Single_Attack *single_attack);

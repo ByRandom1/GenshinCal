@@ -3,7 +3,6 @@
 //
 
 #include "Artifact.h"
-#include "Character.h"
 #include "Deployment.h"
 
 #include <utility>
@@ -21,10 +20,10 @@ string Artifact::get_name() const
 tuple<double, double> Artifact::get_recharge(const Single_Attack *single_attack, const Character *owner)
 { return make_tuple(0, 0); }
 
-attribute_data<int> Artifact::get_useful_attribute(const Single_Attack *single_attack)
+attribute_data<int> Artifact::get_useful_attribute(const Single_Attack *single_attack, attribute_data<int> useful)
 { return {}; }
 
-tuple<attribute_data<double>, attribute_data<double>> Artifact::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> Artifact::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 { return make_tuple(attribute_data<double>(), attribute_data<double>()); }
 
 attribute_data<double> Artifact::get_panel_convert(const Single_Attack *single_attack, attribute_data<double> panel)
@@ -42,7 +41,7 @@ double Artifact::get_react_damplus(const Single_Attack *single_attack, string re
 YueTuan::YueTuan() : Artifact("流浪大地的乐团", "wandererstroupe")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> YueTuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> YueTuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -69,7 +68,7 @@ tuple<attribute_data<double>, attribute_data<double>> YueTuan::get_buff(const Si
 JueDou::JueDou() : Artifact("角斗士的终幕礼", "gladiatorsfinale")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> JueDou::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> JueDou::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -96,7 +95,7 @@ tuple<attribute_data<double>, attribute_data<double>> JueDou::get_buff(const Sin
 BingTao::BingTao() : Artifact("冰风迷途的勇士", "blizzardstrayer")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> BingTao::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> BingTao::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -138,7 +137,7 @@ tuple<attribute_data<double>, attribute_data<double>> BingTao::get_buff(const Si
 ShuiTao::ShuiTao() : Artifact("沉沦之心", "heartofdepth")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> ShuiTao::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> ShuiTao::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -171,7 +170,7 @@ tuple<attribute_data<double>, attribute_data<double>> ShuiTao::get_buff(const Si
 PanYan::PanYan() : Artifact("悠古的磐岩", "archaicpetra")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> PanYan::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> PanYan::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -180,6 +179,11 @@ tuple<attribute_data<double>, attribute_data<double>> PanYan::get_buff(const Sin
     if (piece4)
     {
         //不建构
+        //岩属性角色启用4件套
+        if (single_attack->attack_config->c_point == owner &&
+            single_attack->attack_config->action == "hit" &&
+            single_attack->attack_config->c_point->get_ele_type() == "岩")
+            piece4 = false;
     }
     else
     {
@@ -195,7 +199,7 @@ tuple<attribute_data<double>, attribute_data<double>> PanYan::get_buff(const Sin
 NiFei::NiFei() : Artifact("逆飞的流星", "retracingbolide")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> NiFei::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> NiFei::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -222,7 +226,7 @@ tuple<attribute_data<double>, attribute_data<double>> NiFei::get_buff(const Sing
 RanXue::RanXue() : Artifact("染血的骑士道", "bloodstainedchivalry")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> RanXue::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> RanXue::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -246,7 +250,7 @@ tuple<attribute_data<double>, attribute_data<double>> RanXue::get_buff(const Sin
 ZongShi::ZongShi() : Artifact("昔日宗室之仪", "noblesseoblige")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> ZongShi::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> ZongShi::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -277,7 +281,7 @@ tuple<attribute_data<double>, attribute_data<double>> ZongShi::get_buff(const Si
 FengTao::FengTao() : Artifact("翠绿之影", "viridescentvenerer")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> FengTao::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> FengTao::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -294,6 +298,11 @@ tuple<attribute_data<double>, attribute_data<double>> FengTao::get_buff(const Si
                     result = result + attribute_data("抗性削弱", 0.4);
                     break;
                 }
+        //风属性角色启用4件套
+        if (single_attack->attack_config->c_point == owner &&
+            single_attack->attack_config->action == "hit" &&
+            single_attack->attack_config->c_point->get_ele_type() == "风")
+            piece4 = false;
     }
     else
     {
@@ -320,7 +329,7 @@ double FengTao::get_react_damplus(const Single_Attack *single_attack, string rea
 ShaoNv::ShaoNv() : Artifact("被怜爱的少女", "maidenbeloved")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> ShaoNv::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> ShaoNv::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -343,7 +352,7 @@ tuple<attribute_data<double>, attribute_data<double>> ShaoNv::get_buff(const Sin
 CangBai::CangBai() : Artifact("苍白之火", "paleflame")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> CangBai::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> CangBai::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -384,7 +393,7 @@ tuple<attribute_data<double>, attribute_data<double>> CangBai::get_buff(const Si
 QianYan::QianYan() : Artifact("千岩牢固", "tenacityofthemillelith")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> QianYan::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> QianYan::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -419,7 +428,7 @@ tuple<attribute_data<double>, attribute_data<double>> QianYan::get_buff(const Si
 MoNv::MoNv() : Artifact("炽烈的炎之魔女", "crimsonwitchofflames")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> MoNv::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> MoNv::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -468,7 +477,7 @@ double MoNv::get_react_damplus(const Single_Attack *single_attack, string react_
 DuHuo::DuHuo() : Artifact("渡过烈火的贤人", "lavawalker")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> DuHuo::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> DuHuo::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -505,7 +514,7 @@ tuple<attribute_data<double>, attribute_data<double>> DuHuo::get_buff(const Sing
 RuLei::RuLei() : Artifact("如雷的盛怒", "thunderingfury")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> RuLei::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> RuLei::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -514,6 +523,17 @@ tuple<attribute_data<double>, attribute_data<double>> RuLei::get_buff(const Sing
     if (piece4)
     {
         //不建构
+        //雷元素角色且触发相应反应启用4件套
+        if (single_attack->attack_config->c_point == owner &&
+            single_attack->attack_config->action == "hit" &&
+            single_attack->attack_config->c_point->get_ele_type() == "雷" &&
+            ("超载" <= single_attack->attack_config->react_type ||
+             "感电" <= single_attack->attack_config->react_type ||
+             "超导" <= single_attack->attack_config->react_type ||
+             "超绽放" <= single_attack->attack_config->react_type ||
+             "超激化" <= single_attack->attack_config->react_type ||
+             "原激化" <= single_attack->attack_config->react_type))
+            piece4 = false;
     }
     else
     {
@@ -543,7 +563,7 @@ double RuLei::get_react_damplus(const Single_Attack *single_attack, string react
 PingLei::PingLei() : Artifact("平息鸣雷的尊者", "thundersoother")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> PingLei::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> PingLei::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -604,7 +624,7 @@ tuple<double, double> ZhuiYi::get_recharge(const Single_Attack *single_attack, c
     return make_tuple(Q_energy_modify, energy);
 }
 
-tuple<attribute_data<double>, attribute_data<double>> ZhuiYi::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> ZhuiYi::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -646,18 +666,19 @@ tuple<attribute_data<double>, attribute_data<double>> ZhuiYi::get_buff(const Sin
 JueYuan::JueYuan() : Artifact("绝缘之旗印", "emblemofseveredfate")
 {}
 
-attribute_data<int> JueYuan::get_useful_attribute(const Single_Attack *single_attack)
+attribute_data<int> JueYuan::get_useful_attribute(const Single_Attack *single_attack, attribute_data<int> useful)
 {
-    attribute_data<int> result = Artifact::get_useful_attribute(single_attack);
+    attribute_data<int> result = Artifact::get_useful_attribute(single_attack, useful);
 
     if (single_attack->attack_config->action == "hit" &&
         single_attack->attack_config->attack_way == "Q")
-        result = result + attribute_data("元素充能效率", 1);
+        if (useful.get("伤害加成") > 0)
+            result = result + attribute_data("元素充能效率", 1);
 
     return result;
 }
 
-tuple<attribute_data<double>, attribute_data<double>> JueYuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> JueYuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -665,7 +686,11 @@ tuple<attribute_data<double>, attribute_data<double>> JueYuan::get_buff(const Si
 
     if (piece4)
     {
-        //get_panel_convert
+        //伤害为Q启用4件套
+        if (single_attack->attack_config->c_point == owner &&
+            single_attack->attack_config->action == "hit" &&
+            single_attack->attack_config->attack_way == "Q")
+            piece4 = false;
     }
     else
     {
@@ -691,7 +716,7 @@ attribute_data<double> JueYuan::get_panel_convert(const Single_Attack *single_at
 HuaGuan::HuaGuan() : Artifact("华馆梦醒形骸记", "huskofopulentdreams")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> HuaGuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> HuaGuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -699,7 +724,7 @@ tuple<attribute_data<double>, attribute_data<double>> HuaGuan::get_buff(const Si
 
     if (piece4)
     {
-        //TODO:不准确，认为只有岩元素角色有加成，且默认满层
+        //只认为有岩元素角色有加成，且默认满层
         if (single_attack->attack_config->c_point == owner &&
             single_attack->attack_config->action == "hit" &&
             single_attack->attack_config->c_point->get_ele_type() == "岩")
@@ -722,7 +747,7 @@ tuple<attribute_data<double>, attribute_data<double>> HuaGuan::get_buff(const Si
 HaiRan::HaiRan() : Artifact("海染砗磲", "oceanhuedclam")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> HaiRan::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> HaiRan::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -745,7 +770,7 @@ tuple<attribute_data<double>, attribute_data<double>> HaiRan::get_buff(const Sin
 ChenSha::ChenSha() : Artifact("辰砂往生录", "vermillionhereafter")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> ChenSha::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> ChenSha::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -804,7 +829,7 @@ tuple<attribute_data<double>, attribute_data<double>> ChenSha::get_buff(const Si
 YuXiang::YuXiang() : Artifact("来歆余响", "echoesofanoffering")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> YuXiang::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> YuXiang::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -813,6 +838,11 @@ tuple<attribute_data<double>, attribute_data<double>> YuXiang::get_buff(const Si
     if (piece4)
     {
         //get_extra_rate
+        //伤害为平A启用4件套
+        if (single_attack->attack_config->c_point == owner &&
+            single_attack->attack_config->action == "hit" &&
+            single_attack->attack_config->attack_way == "平A")
+            piece4 = false;
     }
     else
     {
@@ -840,7 +870,7 @@ double YuXiang::get_extra_rate(const Single_Attack *single_attack, attribute_dat
 CaoTao::CaoTao() : Artifact("深林的记忆", "deepwoodmemories")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> CaoTao::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> CaoTao::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -872,7 +902,7 @@ tuple<attribute_data<double>, attribute_data<double>> CaoTao::get_buff(const Sin
 ShiJin::ShiJin() : Artifact("饰金之梦", "gildeddreams")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> ShiJin::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> ShiJin::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -893,6 +923,7 @@ tuple<attribute_data<double>, attribute_data<double>> ShiJin::get_buff(const Sin
         double last_react_time = -8;
         for (auto i: single_attack->team_config->rotation)
             if (i->c_point == owner && i->action == "hit" && !i->react_type.empty() && i->attack_time >= last_react_time + 8)
+            {
                 if (single_attack->attack_config->c_point == owner &&
                     single_attack->attack_config->action == "hit" &&
                     check_time_constrain(i->attack_time, i->attack_time + 8, single_attack->attack_config->attack_time, single_attack->team_config->rotation_time))
@@ -901,6 +932,8 @@ tuple<attribute_data<double>, attribute_data<double>> ShiJin::get_buff(const Sin
                     result = result + attribute_data("元素精通", 50.0 * diff_ele_num);
                     break;
                 }
+                last_react_time = i->attack_time;
+            }
     }
     else
     {
@@ -915,7 +948,7 @@ tuple<attribute_data<double>, attribute_data<double>> ShiJin::get_buff(const Sin
 LouGe::LouGe() : Artifact("沙上楼阁史话", "desertpavilionchronicle")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> LouGe::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> LouGe::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -948,7 +981,7 @@ tuple<attribute_data<double>, attribute_data<double>> LouGe::get_buff(const Sing
 LeYuan::LeYuan() : Artifact("乐园遗落之花", "flowerofparadiselost")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> LeYuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> LeYuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -957,6 +990,11 @@ tuple<attribute_data<double>, attribute_data<double>> LeYuan::get_buff(const Sin
     if (piece4)
     {
         //get_react_damplus
+        //伤害有绽放启用4件套
+        if (single_attack->attack_config->c_point == owner &&
+            single_attack->attack_config->action == "hit" &&
+            "绽放" <= single_attack->attack_config->react_type)
+            piece4 = false;
     }
     else
     {
@@ -992,7 +1030,7 @@ double LeYuan::get_react_damplus(const Single_Attack *single_attack, string reac
 ShuiXian::ShuiXian() : Artifact("水仙之梦", "nymphsdream")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> ShuiXian::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> ShuiXian::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -1047,7 +1085,7 @@ tuple<attribute_data<double>, attribute_data<double>> ShuiXian::get_buff(const S
 HuaHai::HuaHai() : Artifact("花海甘露之光", "dewflowersglow")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> HuaHai::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> HuaHai::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -1082,10 +1120,10 @@ tuple<attribute_data<double>, attribute_data<double>> HuaHai::get_buff(const Sin
     return make_tuple(result, converted);
 }
 
-ZhuYing::ZhuYing() : Artifact("逐影猎人", "")
+ZhuYing::ZhuYing() : Artifact("逐影猎人", "marechausseehunter")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> ZhuYing::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> ZhuYing::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -1116,10 +1154,10 @@ tuple<attribute_data<double>, attribute_data<double>> ZhuYing::get_buff(const Si
     return make_tuple(result, converted);
 }
 
-JuTuan::JuTuan() : Artifact("黄金剧团", "")
+JuTuan::JuTuan() : Artifact("黄金剧团", "goldentroupe")
 {}
 
-tuple<attribute_data<double>, attribute_data<double>> JuTuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool piece4)
+tuple<attribute_data<double>, attribute_data<double>> JuTuan::get_buff(const Single_Attack *single_attack, const Character *owner, bool &piece4)
 {
     attribute_data<double> result;
     attribute_data<double> converted;
@@ -1168,7 +1206,7 @@ tuple<attribute_data<double>, attribute_data<double>> JuTuan::get_buff(const Sin
 //A::A() : Artifact("", "")
 //{}
 //
-//tuple<attribute_data<double>, attribute_data<double>> A::get_buff(const Single_Attack *single_attack, const Character* owner, bool piece4)
+//tuple<attribute_data<double>, attribute_data<double>> A::get_buff(const Single_Attack *single_attack, const Character* owner, bool &piece4)
 //{
 //    attribute_data<double> result;
 //    attribute_data<double> converted;
