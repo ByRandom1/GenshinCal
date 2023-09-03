@@ -40,16 +40,16 @@ string Reinforced_Artifact::suit_name_convert(string suit_name_)
     else if (suit_name_ == "emblemOfSeveredFate") return "绝缘之旗印";
     else if (suit_name_ == "huskOfOpulentDreams") return "华馆梦醒形骸记";//?
     else if (suit_name_ == "oceanHuedClam") return "海染砗磲";//?
-    else if (suit_name_ == "VermillionHereafter") return "辰砂往生录";//?
-    else if (suit_name_ == "EchoesOfAnOffering") return "来歆余响";//?
+    else if (suit_name_ == "VermillionHereafter") return "辰砂往生录";
+    else if (suit_name_ == "EchoesOfAnOffering") return "来歆余响";
     else if (suit_name_ == "DeepwoodMemories") return "深林的记忆";
     else if (suit_name_ == "GildedDreams") return "饰金之梦";
-    else if (suit_name_ == "desertpavilionchronicle") return "沙上楼阁史话";//?
-    else if (suit_name_ == "flowerofparadiselost") return "乐园遗落之花";//?
-    else if (suit_name_ == "nymphsdream") return "水仙之梦";//?
-    else if (suit_name_ == "dewflowersglow") return "花海甘露之光";//?
-    else if (suit_name_ == "marechausseeHunter") return "逐影猎人";//?
-    else if (suit_name_ == "goldenTroupe") return "黄金剧团";//?
+    else if (suit_name_ == "DesertPavilionChronicle") return "沙上楼阁史话";
+    else if (suit_name_ == "FlowerOfParadiseLost") return "乐园遗落之花";
+    else if (suit_name_ == "NymphsDream") return "水仙之梦";
+    else if (suit_name_ == "VourukashasGlow") return "花海甘露之光";
+    else if (suit_name_ == "MarechausseeHunter") return "逐影猎人";
+    else if (suit_name_ == "GoldenTroupe") return "黄金剧团";
     else
     {
         cout << suit_name_ << endl;

@@ -545,20 +545,21 @@ void read_artifact_json()
     string pos_name[5] = {"flower", "feather", "sand", "cup", "head"};
     if (json_reader.parse(infile, root, false))
         for (int i = 0; i < 5; ++i)
-            for (auto &j: root[i])
-            {
-                vector<pair<string, double>> entry;
-                entry.emplace_back(j["normalTags"][0]["name"].asString(), j["normalTags"][0]["value"].asDouble());
-                entry.emplace_back(j["normalTags"][1]["name"].asString(), j["normalTags"][1]["value"].asDouble());
-                entry.emplace_back(j["normalTags"][2]["name"].asString(), j["normalTags"][2]["value"].asDouble());
-                if (j["normalTags"].size() == 4)
-                    entry.emplace_back(j["normalTags"][3]["name"].asString(), j["normalTags"][3]["value"].asDouble());
+            for (auto &j: root[pos_name[i]])
+                if (j["star"].asInt() == 5)
+                {
+                    vector<pair<string, double>> entry;
+                    entry.emplace_back(j["normalTags"][0]["name"].asString(), j["normalTags"][0]["value"].asDouble());
+                    entry.emplace_back(j["normalTags"][1]["name"].asString(), j["normalTags"][1]["value"].asDouble());
+                    entry.emplace_back(j["normalTags"][2]["name"].asString(), j["normalTags"][2]["value"].asDouble());
+                    if (j["normalTags"].size() == 4)
+                        entry.emplace_back(j["normalTags"][3]["name"].asString(), j["normalTags"][3]["value"].asDouble());
 
-                reinforced_artifact_list[i].push_back(new Reinforced_Artifact(j["level"].asInt(),
-                                                                              j["setName"].asString(),
-                                                                              make_pair(j["mainTag"]["name"].asString(), j["mainTag"]["value"].asDouble()),
-                                                                              entry));
-            }
+                    reinforced_artifact_list[i].push_back(new Reinforced_Artifact(j["level"].asInt(),
+                                                                                  j["setName"].asString(),
+                                                                                  make_pair(j["mainTag"]["name"].asString(), j["mainTag"]["value"].asDouble()),
+                                                                                  entry));
+                }
 
     infile.close();
 }
@@ -570,7 +571,7 @@ void write_artifact_score()
     else if (os_type == "WIN") outfile_artifact_judge.open(win_data_path + "artifact.csv");
     outfile_artifact_judge << "索引,套装,主属性,副属性1,副属性1数值,副属性2,副属性2数值,副属性3,副属性3数值,副属性4,副属性4数值,生命词条,攻击词条,防御词条,精通词条,充能词条,暴击词条,爆伤词条";
     //judge standard
-    outfile_artifact_judge << ",生暴爆数量,生暴爆,生暴爆(反应)数量,生暴爆(反应),攻暴爆数量,攻暴爆,攻暴爆(反应)数量,攻暴爆(反应),精暴爆数量,精暴爆" << endl;
+    outfile_artifact_judge << ",生暴爆数量,生暴爆,生暴爆(反应)数量,生暴爆(反应),攻暴爆数量,攻暴爆,攻暴爆(反应)数量,攻暴爆(反应),精暴爆数量,精暴爆,最大数量" << endl;
     double standard_20[5] = {7, 7, 6, 5, 5};
     double recharge_count_max_20 = 1.0;
     double standard_0[5] = {2, 2, 1.5, 1, 1};
@@ -590,47 +591,64 @@ void write_artifact_score()
 
             double standard = (reinforced_artifact_list[i][j]->level == 20 ? standard_20[i] : standard_0[i]);
             double recharge_count_max = (reinforced_artifact_list[i][j]->level == 20 ? recharge_count_max_20 : recharge_count_max_0);
+            if (reinforced_artifact_list[i][j]->level == 0)
+                entry_num = attribute_data(round(entry_num.get("生命值")), round(entry_num.get("攻击力")), round(entry_num.get("防御力")), round(entry_num.get("元素精通")),
+                                           round(entry_num.get("元素充能效率")), round(entry_num.get("暴击率")), round(entry_num.get("暴击伤害")), round(entry_num.get("伤害加成")),
+                                           round(entry_num.get("抗性削弱")), round(entry_num.get("防御削弱")), round(entry_num.get("防御无视")), round(entry_num.get("治疗加成")), round(entry_num.get("护盾强效")));
+
+            double max_acceptable_entry_num = 0;
 
             double life_entry_num = entry_num.get("生命值") + entry_num.get("暴击率") + entry_num.get("暴击伤害") + min(entry_num.get("元素充能效率") / 2, recharge_count_max);
             string life_entry_judge = (life_entry_num >= standard ? "TRUE" : "FALSE");
-            if ((i == 3 && (reinforced_artifact_list[i][j]->main.first != "生命值" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
-                (i == 4 && !("伤害加成" <= reinforced_artifact_list[i][j]->main.first)) ||
-                (i == 5 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
+            if ((i == 2 && (reinforced_artifact_list[i][j]->main.first != "生命值" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
+                (i == 3 && reinforced_artifact_list[i][j]->main.first.find("伤害加成") == string::npos) ||
+                (i == 4 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
                 life_entry_judge = "FALSE";
+            else
+                max_acceptable_entry_num = max(max_acceptable_entry_num, life_entry_num);
 
             double life_react_entry_num = entry_num.get("生命值") + entry_num.get("元素精通") + entry_num.get("暴击率") + entry_num.get("暴击伤害") + min(entry_num.get("元素充能效率") / 2, recharge_count_max);
             string life_react_entry_judge = (life_react_entry_num >= standard ? "TRUE" : "FALSE");
-            if ((i == 3 && (reinforced_artifact_list[i][j]->main.first != "生命值" && reinforced_artifact_list[i][j]->main.first != "元素精通" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
-                (i == 4 && !("伤害加成" <= reinforced_artifact_list[i][j]->main.first)) ||
-                (i == 5 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
+            if ((i == 2 && (reinforced_artifact_list[i][j]->main.first != "生命值" && reinforced_artifact_list[i][j]->main.first != "元素精通" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
+                (i == 3 && reinforced_artifact_list[i][j]->main.first.find("伤害加成") == string::npos) ||
+                (i == 4 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
                 life_react_entry_judge = "FALSE";
+            else
+                max_acceptable_entry_num = max(max_acceptable_entry_num, life_react_entry_num);
 
             double atk_entry_num = entry_num.get("攻击力") + entry_num.get("暴击率") + entry_num.get("暴击伤害") + min(entry_num.get("元素充能效率") / 2, recharge_count_max);
             string atk_entry_judge = (atk_entry_num >= standard ? "TRUE" : "FALSE");
-            if ((i == 3 && (reinforced_artifact_list[i][j]->main.first != "攻击力" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
-                (i == 4 && !("伤害加成" <= reinforced_artifact_list[i][j]->main.first)) ||
-                (i == 5 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
+            if ((i == 2 && (reinforced_artifact_list[i][j]->main.first != "攻击力" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
+                (i == 3 && reinforced_artifact_list[i][j]->main.first.find("伤害加成") == string::npos) ||
+                (i == 4 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
                 atk_entry_judge = "FALSE";
+            else
+                max_acceptable_entry_num = max(max_acceptable_entry_num, atk_entry_num);
 
             double atk_react_entry_num = entry_num.get("攻击力") + entry_num.get("元素精通") + entry_num.get("暴击率") + entry_num.get("暴击伤害") + min(entry_num.get("元素充能效率") / 2, recharge_count_max);
             string atk_react_entry_judge = (atk_react_entry_num >= standard ? "TRUE" : "FALSE");
-            if ((i == 3 && (reinforced_artifact_list[i][j]->main.first != "攻击力" && reinforced_artifact_list[i][j]->main.first != "元素精通" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
-                (i == 4 && !("伤害加成" <= reinforced_artifact_list[i][j]->main.first)) ||
-                (i == 5 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
+            if ((i == 2 && (reinforced_artifact_list[i][j]->main.first != "攻击力" && reinforced_artifact_list[i][j]->main.first != "元素精通" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
+                (i == 3 && reinforced_artifact_list[i][j]->main.first.find("伤害加成") == string::npos) ||
+                (i == 4 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
                 atk_react_entry_judge = "FALSE";
+            else
+                max_acceptable_entry_num = max(max_acceptable_entry_num, atk_react_entry_num);
 
             double mastery_entry_num = entry_num.get("元素精通") + entry_num.get("暴击率") + entry_num.get("暴击伤害") + min(entry_num.get("元素充能效率") / 2, recharge_count_max);
             string mastery_entry_judge = (mastery_entry_num >= standard ? "TRUE" : "FALSE");
-            if ((i == 3 && (reinforced_artifact_list[i][j]->main.first != "元素精通" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
-                (i == 4 && !("伤害加成" <= reinforced_artifact_list[i][j]->main.first)) ||
-                (i == 5 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
+            if ((i == 2 && (reinforced_artifact_list[i][j]->main.first != "元素精通" && reinforced_artifact_list[i][j]->main.first != "元素充能效率")) ||
+                (i == 3 && reinforced_artifact_list[i][j]->main.first.find("伤害加成") == string::npos) ||
+                (i == 4 && (reinforced_artifact_list[i][j]->main.first != "暴击率" && reinforced_artifact_list[i][j]->main.first != "暴击伤害")))
                 mastery_entry_judge = "FALSE";
+            else
+                max_acceptable_entry_num = max(max_acceptable_entry_num, mastery_entry_num);
 
             outfile_artifact_judge << "," << life_entry_num << "," << life_entry_judge
                                    << "," << life_react_entry_num << "," << life_react_entry_judge
                                    << "," << atk_entry_num << "," << atk_entry_judge
                                    << "," << atk_react_entry_num << "," << atk_react_entry_judge
-                                   << "," << mastery_entry_num << "," << mastery_entry_judge << endl;
+                                   << "," << mastery_entry_num << "," << mastery_entry_judge
+                                   << "," << max_acceptable_entry_num << endl;
         }
 
     outfile_artifact_judge.close();
