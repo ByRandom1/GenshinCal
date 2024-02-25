@@ -50,6 +50,8 @@ string Reinforced_Artifact::suit_name_convert(string suit_name_)
     else if (suit_name_ == "VourukashasGlow") return "花海甘露之光";
     else if (suit_name_ == "MarechausseeHunter") return "逐影猎人";
     else if (suit_name_ == "GoldenTroupe") return "黄金剧团";
+    else if (suit_name_ == "NighttimeWhispersInTheEchoingWoods") return "回声之林夜话";
+    else if (suit_name_ == "SongOfDaysPast") return "昔时之歌";
     else
     {
         cout << suit_name_ << endl;

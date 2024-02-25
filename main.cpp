@@ -18,7 +18,7 @@ int artifact_2_2_max_entry_bonus = 2;
 double out_filter_percentage = 0.95;//0.95*(1+2.5%)*(1+2.5%)=1 2词条
 
 string mac_data_path = "/Users/maxwell/Downloads/资料/游戏资料/Genshin/GenshinData/";
-string win_data_path = R"(C:\Users\Maxwell\Desktop\Genshin\GenshinData\)";
+string win_data_path = R"(C:\Users\Maxwell\Desktop\DATA\Genshin\GenshinData\)";
 string os_type;
 
 //func 1
